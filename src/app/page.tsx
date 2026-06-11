@@ -1,47 +1,52 @@
 import Link from 'next/link';
-import { ArrowRight, Waves } from 'lucide-react';
-import { getMatches } from '@/lib/football-api';
-import { getOddsForMatches, oddsToMap } from '@/lib/lottery-scraper';
-import {
-  predictMany,
-  evaluatePrediction,
-  calculateAccuracy,
-} from '@/lib/octopus';
-import { isToday, isPast, formatTaiwanDate } from '@/lib/utils';
+import { ArrowRight, Waves, Info } from 'lucide-react';
+import { getAggregatedData } from '@/lib/page-data';
+import { ENGINE_META } from '@/lib/octopus';
+import { isToday, isPast, formatTaiwanDate, cn } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
 import StatCard from '@/components/StatCard';
+import type { EngineId } from '@/types';
 
 // 每 5 分鐘重新整理一次（ISR）
 export const revalidate = 300;
 
-export default async function Dashboard() {
-  const allMatches = await getMatches();
-  const odds = await getOddsForMatches(allMatches);
-  const oddsMap = oddsToMap(odds);
-  const predictions = predictMany(allMatches, oddsMap);
-  const predictionMap = new Map(predictions.map((p) => [p.matchId, p]));
+// 統計卡顯示「資料蒐集中」的最低樣本數
+const MIN_EVALUATED = 5;
+// 神準率以「章魚哥本人」為代表（leaderboard 看完整三隻）
+const HERO_ENGINE: EngineId = 'paul';
 
-  // 統計章魚哥準確率（基於已結束比賽）
-  const results = predictions.map((p) => {
-    const match = allMatches.find((m) => m.id === p.matchId)!;
-    return evaluatePrediction(p, match);
-  });
-  const stats = calculateAccuracy(results);
+export default async function Dashboard() {
+  const { matches, oddsMap, bundles, accuracies, llmProvider } =
+    await getAggregatedData();
+
+  // 統計（只算正賽，熱身賽顯示給 leaderboard 用）
+  const heroStats = accuracies[HERO_ENGINE].official;
 
   // 今日比賽
-  const todayMatches = allMatches
+  const todayMatches = matches
     .filter((m) => isToday(m.utcDate))
     .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
 
   // 即將開賽（未來、非今日，取前 6 場）
-  const upcomingMatches = allMatches
+  const upcomingMatches = matches
     .filter((m) => !isPast(m.utcDate) && !isToday(m.utcDate))
     .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())
     .slice(0, 6);
 
-  const todayPrediction = todayMatches[0]
-    ? predictionMap.get(todayMatches[0].id)
+  const todayBundle = todayMatches[0]
+    ? bundles.get(todayMatches[0].id)
     : null;
+  const todayHero = todayBundle?.[HERO_ENGINE];
+
+  // 神準率顯示邏輯
+  const accuracyLabel =
+    heroStats.evaluated < MIN_EVALUATED
+      ? '—'
+      : `${Math.round(heroStats.accuracy * 100)}%`;
+  const accuracyHint =
+    heroStats.evaluated < MIN_EVALUATED
+      ? `樣本不足・${heroStats.evaluated}/${MIN_EVALUATED} 場`
+      : `${heroStats.correct} / ${heroStats.evaluated} 場命中`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
@@ -54,26 +59,55 @@ export default async function Dashboard() {
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-300">
             <Waves className="h-3.5 w-3.5" />
-            2026 FIFA World Cup · 深海神諭啟動中
+            2026 FIFA World Cup · 三隻章魚哥神諭啟動中
           </div>
 
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
             章魚哥<span className="text-cyan-300">神諭</span>
           </h1>
           <p className="mt-3 max-w-xl text-base text-slate-300 sm:text-lg">
-            致敬傳奇章魚保羅 🐙　透過深海神祕力量為每場世界杯指引方向，
-            結合台灣運彩即時賠率，讓朋友圈一起來看誰預測得準！
+            致敬傳奇章魚保羅 🐙　每場比賽召喚<strong className="text-cyan-200">三隻章魚哥</strong>
+            （直覺派 / 科學派 / AI 派）為你指引方向，結合台灣運彩賠率，朋友圈一起來看誰最神準！
           </p>
 
-          {todayPrediction && (
+          {/* 三隻章魚哥介紹 */}
+          <div className="mt-5 grid grid-cols-3 gap-2 sm:max-w-md">
+            {(['paul', 'doctor', 'oracle'] as const).map((id) => {
+              const m = ENGINE_META[id];
+              return (
+                <div
+                  key={id}
+                  className="rounded-xl border border-white/10 bg-slate-900/60 p-2.5 text-center backdrop-blur"
+                  title={m.description}
+                >
+                  <div className="text-xl">{m.emoji}</div>
+                  <div className="mt-0.5 text-[10px] font-medium text-white">
+                    {m.shortName}
+                  </div>
+                  <div
+                    className={cn(
+                      'text-[9px]',
+                      m.accent === 'cyan' && 'text-cyan-300/80',
+                      m.accent === 'emerald' && 'text-emerald-300/80',
+                      m.accent === 'violet' && 'text-violet-300/80',
+                    )}
+                  >
+                    {m.title}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {todayHero && (
             <div className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3 backdrop-blur">
-              <span className="text-3xl">{todayPrediction.pickedTeamFlag}</span>
+              <span className="text-3xl">{todayHero.pickedTeamFlag}</span>
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-cyan-300/80">
-                  今日首戰章魚哥神諭
+                  🐙 章魚哥本人・今日首戰
                 </div>
                 <div className="text-base font-bold text-white">
-                  {todayPrediction.pickedTeamName} 將勝出
+                  {todayHero.pickedTeamName} 將勝出
                 </div>
               </div>
             </div>
@@ -93,21 +127,23 @@ export default async function Dashboard() {
         <StatCard
           icon="🐙"
           label="累積預測"
-          value={stats.total}
-          hint={`已驗證 ${stats.evaluated} 場`}
+          value={heroStats.total}
+          hint={`正賽 ${heroStats.total} 場`}
           accent="emerald"
         />
-        <StatCard
-          icon="🎯"
-          label="神準率"
-          value={
-            stats.evaluated === 0
-              ? '—'
-              : `${Math.round(stats.accuracy * 100)}%`
-          }
-          hint={`${stats.correct} / ${stats.evaluated} 命中`}
-          accent="amber"
-        />
+        <Link
+          href="/leaderboard"
+          className="block transition hover:scale-[1.02]"
+          aria-label="點擊查看神準率詳細排行榜"
+        >
+          <StatCard
+            icon="🎯"
+            label="正賽神準率"
+            value={accuracyLabel}
+            hint={accuracyHint}
+            accent="amber"
+          />
+        </Link>
         <StatCard
           icon="⚡"
           label="即將開賽"
@@ -116,6 +152,23 @@ export default async function Dashboard() {
           accent="rose"
         />
       </section>
+
+      {/* 樣本不足提示（解決「14% 看起來很不準」的問題） */}
+      {heroStats.evaluated < MIN_EVALUATED && (
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-200/90">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div>
+            <strong>神準率計算中：</strong>
+            目前正賽樣本只有 {heroStats.evaluated} 場，至少需要 {MIN_EVALUATED} 場才有統計意義。
+            <Link
+              href="/leaderboard"
+              className="ml-1 underline decoration-amber-300/50 underline-offset-2 hover:text-amber-200"
+            >
+              查看歷史紀錄 →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* 今日比賽 */}
       <section className="mt-10">
@@ -145,7 +198,7 @@ export default async function Dashboard() {
                 key={m.id}
                 match={m}
                 odds={oddsMap.get(m.id)}
-                prediction={predictionMap.get(m.id)}
+                bundle={bundles.get(m.id)}
               />
             ))}
           </div>
@@ -164,12 +217,18 @@ export default async function Dashboard() {
                 key={m.id}
                 match={m}
                 odds={oddsMap.get(m.id)}
-                prediction={predictionMap.get(m.id)}
+                bundle={bundles.get(m.id)}
               />
             ))}
           </div>
         </section>
       )}
+
+      {/* LLM provider 狀態 footer */}
+      <p className="mt-12 text-center text-[11px] text-slate-500">
+        🔮 章魚神諭官目前 provider：<span className="font-mono">{llmProvider}</span>
+        {llmProvider === 'mock' && '（設定 OPENAI_API_KEY 或 ANTHROPIC_API_KEY 可啟用真實 LLM）'}
+      </p>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, MapPin } from 'lucide-react';
-import type { Match, Odds, Prediction } from '@/types';
+import type { Match, Odds, PredictionBundle } from '@/types';
 import { cn, formatTaiwanTime, statusToChinese } from '@/lib/utils';
 import { useRevealed } from '@/lib/use-revealed';
 import OctopusPredictor from './OctopusPredictor';
@@ -10,10 +10,10 @@ import OddsDisplay from './OddsDisplay';
 interface MatchCardProps {
   match: Match;
   odds?: Odds;
-  prediction?: Prediction;
+  bundle?: PredictionBundle;
 }
 
-export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
+export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
   const isFinished = match.status === 'FINISHED';
   const isLive = match.status === 'LIVE' || match.status === 'IN_PLAY';
   const winner = match.score?.winner;
@@ -22,6 +22,9 @@ export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
   const autoReveal = isFinished || isLive;
   const { revealed, hydrated, markRevealed } = useRevealed(match.id, autoReveal);
 
+  // 神諭主角（決定 odds highlight 用哪一隻的 pick）：章魚哥本人
+  const heroPick = bundle?.paul.pick;
+
   return (
     <article
       className={cn(
@@ -29,23 +32,33 @@ export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
         'hover:border-cyan-400/30 hover:shadow-[0_0_30px_-15px_rgba(34,211,238,0.4)]',
       )}
     >
-      {/* Header — 時間 / 狀態 */}
+      {/* Header — 時間 / 狀態 + 熱身賽標籤 */}
       <div className="flex items-center justify-between text-xs text-slate-400">
         <span className="inline-flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {formatTaiwanTime(match.utcDate)}
         </span>
-        <span
-          className={cn(
-            'rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider',
-            isLive && 'animate-pulse bg-red-500/20 text-red-300',
-            isFinished && 'bg-slate-700/50 text-slate-300',
-            !isLive && !isFinished && 'bg-cyan-500/20 text-cyan-300',
+        <div className="flex items-center gap-1.5">
+          {match.isFriendly && (
+            <span
+              className="rounded-full bg-slate-700/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-300"
+              title="熱身賽 / 友誼賽，不計入正賽神準率"
+            >
+              熱身賽
+            </span>
           )}
-        >
-          {isLive && '● '}
-          {statusToChinese(match.status)}
-        </span>
+          <span
+            className={cn(
+              'rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider',
+              isLive && 'animate-pulse bg-red-500/20 text-red-300',
+              isFinished && 'bg-slate-700/50 text-slate-300',
+              !isLive && !isFinished && 'bg-cyan-500/20 text-cyan-300',
+            )}
+          >
+            {isLive && '● '}
+            {statusToChinese(match.status)}
+          </span>
+        </div>
       </div>
 
       {/* 雙方對戰 */}
@@ -92,17 +105,17 @@ export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
         </div>
       )}
 
-      {/* 賠率 — 只有揭曉後才 highlight 章魚哥選的那項，避免提前破梗 */}
+      {/* 賠率 — 只有揭曉後才 highlight 章魚哥（hero）選的那項 */}
       <OddsDisplay
         odds={odds}
-        highlight={prediction?.pick}
+        highlight={heroPick}
         showHighlight={hydrated && revealed}
       />
 
-      {/* 章魚哥預測 */}
-      {prediction && (
+      {/* 三隻章魚哥神諭 */}
+      {bundle && (
         <OctopusPredictor
-          prediction={prediction}
+          bundle={bundle}
           match={match}
           revealed={revealed}
           hydrated={hydrated}

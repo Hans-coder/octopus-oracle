@@ -1,39 +1,41 @@
 import { NextResponse } from 'next/server';
-import { getMatches } from '@/lib/football-api';
-import { getOddsForMatches, oddsToMap } from '@/lib/lottery-scraper';
-import {
-  predictMany,
-  evaluatePrediction,
-  calculateAccuracy,
-} from '@/lib/octopus';
+import { getAggregatedData } from '@/lib/page-data';
+import { evaluatePrediction } from '@/lib/octopus';
+import type { EngineId, PredictionResult } from '@/types';
 
 /**
  * GET /api/predictions
- * 取得章魚哥對所有比賽的預測與準確率統計
+ * 取得三隻章魚哥對所有比賽的預測 + 各引擎準確率統計
  */
 export async function GET() {
   try {
-    const matches = await getMatches();
-    const odds = await getOddsForMatches(matches);
-    const oddsMap = oddsToMap(odds);
-    const predictions = predictMany(matches, oddsMap);
+    const { matches, bundles, accuracies, llmProvider } =
+      await getAggregatedData();
 
-    const results = predictions.map((p) => {
-      const m = matches.find((x) => x.id === p.matchId)!;
-      return evaluatePrediction(p, m);
+    const detail = matches.map((match) => {
+      const bundle = bundles.get(match.id);
+      if (!bundle) return null;
+
+      const perEngine: Record<EngineId, PredictionResult> = {
+        paul: evaluatePrediction(bundle.paul, match),
+        doctor: evaluatePrediction(bundle.doctor, match),
+        oracle: evaluatePrediction(bundle.oracle, match),
+      };
+
+      return {
+        match,
+        consensus: bundle.consensus,
+        paul: { ...bundle.paul, ...perEngine.paul },
+        doctor: { ...bundle.doctor, ...perEngine.doctor },
+        oracle: { ...bundle.oracle, ...perEngine.oracle },
+      };
     });
-
-    const stats = calculateAccuracy(results);
 
     return NextResponse.json({
       ok: true,
-      stats,
-      predictions: results.map((r, idx) => ({
-        ...r.prediction,
-        actual: r.actual,
-        correct: r.correct,
-        match: matches[idx],
-      })),
+      llmProvider,
+      accuracies,
+      predictions: detail.filter(Boolean),
     });
   } catch (err) {
     return NextResponse.json(

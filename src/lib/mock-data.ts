@@ -89,6 +89,9 @@ export function generateMockMatches(): Match[] {
     const utcDate = tw.toISOString();
     const isPast = tw.getTime() < Date.now();
 
+    // 開賽前的賽事 = 熱身賽（不計入正賽神準率）
+    const isFriendly = dayOffset < 0;
+
     let score: Match['score'];
     let status: Match['status'] = 'SCHEDULED';
     if (isPast) {
@@ -110,6 +113,7 @@ export function generateMockMatches(): Match[] {
       group: home.group,
       matchday: dayOffset + 1,
       venue,
+      isFriendly,
       homeTeam: home,
       awayTeam: away,
       score,

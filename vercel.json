@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/update-odds",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/llm-analyze",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

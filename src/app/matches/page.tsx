@@ -1,20 +1,15 @@
-import { getMatches } from '@/lib/football-api';
-import { getOddsForMatches, oddsToMap } from '@/lib/lottery-scraper';
-import { predictMany } from '@/lib/octopus';
+import { getAggregatedData } from '@/lib/page-data';
 import { formatTaiwanDate } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
 
 export const revalidate = 300;
 
 export default async function MatchesPage() {
-  const matches = await getMatches();
-  const odds = await getOddsForMatches(matches);
-  const oddsMap = oddsToMap(odds);
-  const predictions = predictMany(matches, oddsMap);
-  const predictionMap = new Map(predictions.map((p) => [p.matchId, p]));
+  const { matches, oddsMap, bundles } = await getAggregatedData();
 
   // 按日期分組
   const grouped = matches
+    .slice()
     .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())
     .reduce<Record<string, typeof matches>>((acc, m) => {
       const key = new Date(m.utcDate).toLocaleDateString('en-CA', {
@@ -24,6 +19,9 @@ export default async function MatchesPage() {
       return acc;
     }, {});
 
+  const officialCount = matches.filter((m) => !m.isFriendly).length;
+  const friendlyCount = matches.length - officialCount;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <header className="mb-8">
@@ -31,7 +29,8 @@ export default async function MatchesPage() {
           全部賽程
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          共 {matches.length} 場・每場附章魚哥神諭與台灣運彩賠率
+          共 {matches.length} 場（正賽 {officialCount} / 熱身賽 {friendlyCount}）
+          ・每場附三隻章魚哥神諭與台灣運彩賠率
         </p>
       </header>
 
@@ -48,7 +47,7 @@ export default async function MatchesPage() {
                 key={m.id}
                 match={m}
                 odds={oddsMap.get(m.id)}
-                prediction={predictionMap.get(m.id)}
+                bundle={bundles.get(m.id)}
               />
             ))}
           </div>
