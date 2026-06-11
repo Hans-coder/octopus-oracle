@@ -1,0 +1,2 @@
+# 保留 public/ 資料夾在 git 中
+# Next.js 期望此資料夾存在以放置靜態資源 (圖片、favicon 等)
