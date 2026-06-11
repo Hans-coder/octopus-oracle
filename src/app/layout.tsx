@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Navigation from '@/components/Navigation';
+import MockDataBanner from '@/components/MockDataBanner';
 import './globals.css';
 
 const geistSans = Geist({
@@ -42,6 +43,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Navigation />
+        <MockDataBanner />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-white/5 py-6 text-center text-xs text-slate-500">
           <p>

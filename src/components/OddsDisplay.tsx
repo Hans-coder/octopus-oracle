@@ -27,6 +27,8 @@ export default function OddsDisplay({
     { key: 'AWAY', label: '客勝', value: odds.awayWin },
   ];
 
+  const isMock = /模擬|mock/i.test(odds.source);
+
   return (
     <div className="space-y-1.5">
       <div className="grid grid-cols-3 gap-1.5">
@@ -57,7 +59,13 @@ export default function OddsDisplay({
           );
         })}
       </div>
-      <p className="text-center text-[10px] text-slate-500">
+      <p
+        className={cn(
+          'text-center text-[10px]',
+          isMock ? 'text-amber-400/70' : 'text-slate-500',
+        )}
+      >
+        {isMock && '⚠️ '}
         資料來源：{odds.source}
       </p>
     </div>

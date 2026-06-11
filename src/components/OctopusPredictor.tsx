@@ -2,12 +2,20 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Eye, RotateCcw, Sparkle } from 'lucide-react';
+import {
+  Sparkles,
+  Eye,
+  RotateCcw,
+  Sparkle,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react';
 import type {
   EngineId,
   Match,
   Prediction,
   PredictionBundle,
+  PredictionPick,
 } from '@/types';
 import { cn } from '@/lib/utils';
 import { ENGINES, ENGINE_META } from '@/lib/octopus';
@@ -23,6 +31,8 @@ interface OctopusPredictorProps {
   /** 動畫完成時呼叫，告知父層持久化揭曉狀態 */
   onRevealComplete: () => void;
   compact?: boolean;
+  /** 比賽實際結果；有值代表比賽已結束，能標記每隻章魚哥對錯 */
+  actual?: PredictionPick | null;
 }
 
 const REVEAL_DURATION_MS = 3800;
@@ -55,6 +65,7 @@ export default function OctopusPredictor({
   hydrated = true,
   onRevealComplete,
   compact = false,
+  actual = null,
 }: OctopusPredictorProps) {
   const [internalPhase, setInternalPhase] = useState<InternalPhase>('auto');
   const [activeEngine, setActiveEngine] = useState<EngineId>(HERO_ENGINE);
@@ -118,6 +129,7 @@ export default function OctopusPredictor({
             allowReplay={!!match}
             onResummon={handleResummon}
             compact={compact}
+            actual={actual}
           />
         )}
       </AnimatePresence>
@@ -353,6 +365,7 @@ function RevealedTabbed({
   allowReplay,
   onResummon,
   compact,
+  actual,
 }: {
   bundle: PredictionBundle;
   activeEngine: EngineId;
@@ -360,11 +373,14 @@ function RevealedTabbed({
   allowReplay: boolean;
   onResummon: () => void;
   compact: boolean;
+  actual: PredictionPick | null;
 }) {
   const prediction = bundle[activeEngine];
   const meta = ENGINE_META[activeEngine];
   const confidencePct = Math.round(prediction.confidence * 100);
   const isConsensus = !!bundle.consensus;
+  const hasResult = actual !== null;
+  const activeCorrect = hasResult ? prediction.pick === actual : null;
 
   return (
     <motion.div
@@ -378,22 +394,35 @@ function RevealedTabbed({
       <div className="flex items-center gap-1">
         {ENGINES.map((e) => {
           const isActive = e.id === activeEngine;
+          const engineCorrect = hasResult ? bundle[e.id].pick === actual : null;
           return (
             <button
               key={e.id}
               type="button"
               onClick={() => onChange(e.id)}
               className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium transition',
+                'relative inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium transition',
                 isActive
                   ? ACCENT_TAB_ACTIVE[e.accent]
                   : 'border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200',
               )}
-              title={`${e.name}・${e.title}`}
+              title={`${e.name}・${e.title}${
+                engineCorrect === true
+                  ? '（命中）'
+                  : engineCorrect === false
+                    ? '（未中）'
+                    : ''
+              }`}
               aria-pressed={isActive}
             >
               <span>{e.emoji}</span>
               <span className="hidden sm:inline">{e.shortName}</span>
+              {engineCorrect === true && (
+                <CheckCircle2 className="h-2.5 w-2.5 text-emerald-300" />
+              )}
+              {engineCorrect === false && (
+                <XCircle className="h-2.5 w-2.5 text-rose-300" />
+              )}
             </button>
           );
         })}
@@ -434,7 +463,10 @@ function RevealedTabbed({
         >
           <div className="flex items-center gap-3">
             <motion.div
-              className="text-4xl"
+              className={cn(
+                'text-4xl',
+                hasResult && activeCorrect === false && 'opacity-60 grayscale',
+              )}
               animate={{ rotate: [0, -8, 8, -8, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             >
@@ -452,6 +484,19 @@ function RevealedTabbed({
                 <span>{meta.name}</span>
                 <span className="text-slate-500">·</span>
                 <span className="text-slate-400">{meta.title}</span>
+                {/* 對錯標籤 — 揭曉後最顯眼的視覺訊號 */}
+                {activeCorrect === true && (
+                  <span className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-200">
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                    命中
+                  </span>
+                )}
+                {activeCorrect === false && (
+                  <span className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-rose-500/20 px-1.5 py-0.5 text-[9px] font-bold text-rose-200">
+                    <XCircle className="h-2.5 w-2.5" />
+                    未中
+                  </span>
+                )}
               </div>
               <div className="mt-0.5 flex items-baseline gap-2">
                 <motion.span
@@ -463,7 +508,12 @@ function RevealedTabbed({
                   {prediction.pickedTeamFlag}
                 </motion.span>
                 <motion.span
-                  className="text-lg font-bold text-white"
+                  className={cn(
+                    'text-lg font-bold',
+                    activeCorrect === false
+                      ? 'text-slate-400 line-through decoration-rose-400/60'
+                      : 'text-white',
+                  )}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.12 }}
@@ -487,7 +537,10 @@ function RevealedTabbed({
 
           {!compact && (
             <motion.p
-              className="relative mt-3 text-xs italic leading-relaxed text-slate-300"
+              className={cn(
+                'relative mt-3 text-xs italic leading-relaxed',
+                activeCorrect === false ? 'text-slate-500' : 'text-slate-300',
+              )}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}

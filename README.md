@@ -95,6 +95,92 @@ src/
 3. 設定環境變數（同上表）
 4. Deploy！Cron Jobs 會自動每 30 分鐘執行 `/api/cron/update-odds`
 
+## 🌐 接真實資料
+
+> **預設使用 mock 資料**：因為下列限制，本專案出廠預設用程式產生的擬真資料運作，頂部會跳出黃色橫幅提醒。
+
+### ⛔ 為什麼預設是 Mock？
+
+| 來源 | 狀態 | 原因 |
+| --- | --- | --- |
+| `football-data.org`（免費版） | ❌ 不支援世界杯 | WC 競賽資料僅開放給付費方案（Tier 2 起，€49/月） |
+| 台彩運彩官網 | ❌ 爬不到 | 賠率頁是 SPA，cheerio 拿到空 HTML，需要 headless browser |
+| LLM 神諭 | ⚠️ 需要 API Key | 沒設 `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` 就 fallback 到 mock |
+
+### ✅ 解決方案
+
+#### 方案 A：API-Football（推薦，免費版就支援 WC）
+
+[api-sports.io](https://www.api-football.com/) 免費版每天 100 calls，**包含 2026 世界杯所有資料**。
+
+```bash
+# .env.local
+API_FOOTBALL_KEY=你的_key
+USE_MOCK_DATA=false
+```
+
+需要改寫 `src/lib/football-api.ts` 的 `fetchMatches()`：
+
+```ts
+const res = await fetch(
+  'https://v3.football.api-sports.io/fixtures?league=1&season=2026',
+  { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! } }
+);
+```
+
+#### 方案 B：TheSportsDB（完全免費，無需 key）
+
+[thesportsdb.com](https://www.thesportsdb.com/free_sports_api) 完全免費，資料較粗但夠用：
+
+```ts
+// FIFA World Cup id = 4429
+const res = await fetch(
+  'https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4429&s=2026'
+);
+```
+
+#### 方案 C：ESPN 隱藏端點（無需 key，會被擋）
+
+```ts
+const res = await fetch(
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard'
+);
+```
+
+非官方，量大會被 rate limit，**僅供本機測試**。
+
+#### 方案 D：真實賠率
+
+台彩運彩 SPA 抓不到，可改用：
+
+- [**The Odds API**](https://the-odds-api.com/) — 免費 500 req/月，含 `soccer_fifa_world_cup`
+- [**OddsPortal**](https://www.oddsportal.com/) — 需要 Playwright headless browser
+
+把 `src/lib/lottery-scraper.ts` 的 `fetchOddsForMatch()` 改成呼叫 The Odds API：
+
+```ts
+const res = await fetch(
+  `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?apiKey=${process.env.ODDS_API_KEY}&regions=eu&markets=h2h`
+);
+```
+
+#### LLM 神諭真實化
+
+```bash
+# .env.local
+LLM_PROVIDER=openai          # 或 anthropic
+OPENAI_API_KEY=sk-...
+# 或
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+設好後，章魚博士 🦑 與深海神諭 🐙‍🌊 會用真實 LLM 分析球隊近況、傷兵、心理層面，產出個性化神諭。
+
+### 🎯 確認接上真實資料
+
+當所有 mock 都關掉後，**頂部黃色橫幅會自動消失**。
+打開 DevTools Network，應該看到對 `api-football.io` / `the-odds-api.com` / `api.openai.com` 的請求。
+
 ## ⚠️ 免責聲明
 
 - 本網站僅供娛樂與技術示範用途
