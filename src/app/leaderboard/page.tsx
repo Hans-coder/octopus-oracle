@@ -1,47 +1,15 @@
 import { CheckCircle2, XCircle, MinusCircle, Info, Trophy } from 'lucide-react';
 import { getAggregatedData } from '@/lib/page-data';
-import { ENGINES, ENGINE_META, evaluatePrediction } from '@/lib/octopus';
+import { ENGINE, evaluatePrediction } from '@/lib/octopus';
 import { cn, formatTaiwanTime } from '@/lib/utils';
-import type {
-  AccuracyBucket,
-  EngineAccuracy,
-  EngineId,
-  Match,
-  PredictionBundle,
-} from '@/types';
+import type { Match, Prediction } from '@/types';
 
 export const revalidate = 300;
 
 const MIN_EVALUATED = 5;
 
-const ACCENT_TEXT: Record<'cyan' | 'emerald' | 'violet', string> = {
-  cyan: 'text-cyan-300',
-  emerald: 'text-emerald-300',
-  violet: 'text-violet-300',
-};
-const ACCENT_BORDER: Record<'cyan' | 'emerald' | 'violet', string> = {
-  cyan: 'border-cyan-400/40',
-  emerald: 'border-emerald-400/40',
-  violet: 'border-violet-400/40',
-};
-const ACCENT_BG: Record<'cyan' | 'emerald' | 'violet', string> = {
-  cyan: 'bg-cyan-500/10',
-  emerald: 'bg-emerald-500/10',
-  violet: 'bg-violet-500/10',
-};
-
 export default async function LeaderboardPage() {
-  const { matches, bundles, accuracies } = await getAggregatedData();
-
-  // 排序 engines by official accuracy（樣本不足者排後面）
-  const rankedEngines = [...ENGINES].sort((a, b) => {
-    const aA = accuracies[a.id].official;
-    const bA = accuracies[b.id].official;
-    const aOk = aA.evaluated >= MIN_EVALUATED;
-    const bOk = bA.evaluated >= MIN_EVALUATED;
-    if (aOk !== bOk) return aOk ? -1 : 1;
-    return bA.accuracy - aA.accuracy;
-  });
+  const { matches, predictions, accuracy } = await getAggregatedData();
 
   // 最近 finished 比賽（依時間倒序）— 僅顯示正賽
   const finishedMatches = matches
@@ -51,37 +19,74 @@ export default async function LeaderboardPage() {
         new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime(),
     );
 
+  const hasEnough = accuracy.evaluated >= MIN_EVALUATED;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <header className="mb-8">
         <h1 className="flex items-center gap-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
           <Trophy className="h-8 w-8 text-amber-300" />
-          神準排行
+          神準紀錄
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          三隻章魚哥對決・看誰能超越傳奇前輩 Paul
+          章魚哥的命中紀錄・致敬傳奇前輩 Paul 🐙
         </p>
       </header>
 
-      {/* 三隻章魚哥對戰卡 */}
-      <section className="mb-10 grid gap-4 sm:grid-cols-3">
-        {rankedEngines.map((engine, rank) => (
-          <EngineLeaderCard
-            key={engine.id}
-            rank={rank + 1}
-            engine={engine.id}
-            accuracy={accuracies[engine.id]}
-          />
-        ))}
+      {/* 章魚哥神準率主卡 */}
+      <section className="mb-8">
+        <div
+          className={cn(
+            'relative overflow-hidden rounded-3xl border-2 bg-slate-900/50 p-6 backdrop-blur sm:p-8',
+            hasEnough
+              ? 'border-cyan-400/40 bg-cyan-500/10'
+              : 'border-white/10',
+          )}
+        >
+          <div className="absolute -right-4 -top-4 text-[160px] opacity-10">
+            🐙
+          </div>
+
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <div className="text-7xl">{ENGINE.emoji}</div>
+
+            <div className="flex-1">
+              <div className="text-sm font-bold text-cyan-300">
+                {ENGINE.name}
+              </div>
+              <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                {ENGINE.title}
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                {ENGINE.description}
+              </p>
+            </div>
+
+            <div className="text-right">
+              <div className="font-mono text-5xl font-bold tabular-nums text-cyan-200">
+                {hasEnough ? `${Math.round(accuracy.accuracy * 100)}%` : '—'}
+              </div>
+              <div className="mt-1 text-[11px] text-slate-400">
+                {accuracy.correct} / {accuracy.evaluated} 場命中
+              </div>
+              {hasEnough && (
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                  <Trophy className="h-3 w-3" />
+                  正賽神準率
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* 樣本不足提示 */}
-      {accuracies.paul.official.evaluated < MIN_EVALUATED && (
+      {!hasEnough && (
         <div className="mb-8 flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-200/90">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div>
             <strong>正賽神準率尚不穩定：</strong>
-            目前只有 {accuracies.paul.official.evaluated} 場正賽結果可評估，
+            目前只有 {accuracy.evaluated} 場正賽結果可評估，
             少於 {MIN_EVALUATED} 場時樣本太少容易誤導，正賽打完後神準率才會穩定下來。
           </div>
         </div>
@@ -97,120 +102,11 @@ export default async function LeaderboardPage() {
           </span>
         </h2>
         {finishedMatches.length === 0 ? (
-          <EmptyHint text="正賽尚未開打，章魚哥們正在熱身…" />
+          <EmptyHint text="正賽尚未開打，章魚哥正在深海冥想中…" />
         ) : (
-          <PredictionList matches={finishedMatches} bundles={bundles} />
+          <PredictionList matches={finishedMatches} predictions={predictions} />
         )}
       </section>
-    </div>
-  );
-}
-
-/* ─────────────── 三隻章魚哥的排行卡 ─────────────── */
-function EngineLeaderCard({
-  rank,
-  engine,
-  accuracy,
-}: {
-  rank: number;
-  engine: EngineId;
-  accuracy: EngineAccuracy;
-}) {
-  const meta = ENGINE_META[engine];
-  const official = accuracy.official;
-  const hasEnough = official.evaluated >= MIN_EVALUATED;
-
-  return (
-    <div
-      className={cn(
-        'relative overflow-hidden rounded-3xl border-2 bg-slate-900/50 p-5 backdrop-blur',
-        rank === 1 && hasEnough
-          ? ACCENT_BORDER[meta.accent]
-          : 'border-white/10',
-        rank === 1 && hasEnough && ACCENT_BG[meta.accent],
-      )}
-    >
-      {/* 排名徽章 */}
-      <div className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
-        #{rank}
-      </div>
-
-      <div className="flex items-start gap-3">
-        <div className="text-5xl">{meta.emoji}</div>
-        <div className="min-w-0 flex-1">
-          <div className={cn('text-sm font-bold', ACCENT_TEXT[meta.accent])}>
-            {meta.name}
-          </div>
-          <div className="text-[10px] uppercase tracking-widest text-slate-500">
-            {meta.title}
-          </div>
-          <p className="mt-1 text-[11px] text-slate-400">{meta.description}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        {/* 正賽 */}
-        <BucketRow
-          label="正賽"
-          bucket={official}
-          accentClass={ACCENT_TEXT[meta.accent]}
-          showAccuracy={hasEnough}
-          highlight
-        />
-      </div>
-
-      {!hasEnough && (
-        <p className="mt-3 rounded-lg bg-slate-800/50 px-2 py-1 text-[10px] text-slate-400">
-          樣本不足（{official.evaluated}/{MIN_EVALUATED}）
-        </p>
-      )}
-
-      {hasEnough && rank === 1 && (
-        <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
-          <Trophy className="h-3 w-3" />
-          目前最神準
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BucketRow({
-  label,
-  bucket,
-  accentClass,
-  showAccuracy,
-  highlight = false,
-}: {
-  label: string;
-  bucket: AccuracyBucket;
-  accentClass: string;
-  showAccuracy: boolean;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        'flex items-baseline justify-between gap-2 rounded-lg px-2 py-1.5',
-        highlight ? 'bg-slate-800/60' : 'bg-slate-900/40',
-      )}
-    >
-      <span className="text-[11px] uppercase tracking-wider text-slate-400">
-        {label}
-      </span>
-      <span className="flex items-baseline gap-1.5">
-        <span
-          className={cn(
-            'font-mono text-lg font-bold tabular-nums',
-            showAccuracy ? accentClass : 'text-slate-500',
-          )}
-        >
-          {showAccuracy ? `${Math.round(bucket.accuracy * 100)}%` : '—'}
-        </span>
-        <span className="text-[10px] text-slate-500">
-          {bucket.correct}/{bucket.evaluated}
-        </span>
-      </span>
     </div>
   );
 }
@@ -218,19 +114,19 @@ function BucketRow({
 /* ─────────────── 預測紀錄列表 ─────────────── */
 function PredictionList({
   matches,
-  bundles,
-  dim = false,
+  predictions,
 }: {
   matches: Match[];
-  bundles: Map<string, PredictionBundle>;
-  dim?: boolean;
+  predictions: Map<string, Prediction>;
 }) {
   return (
-    <ul className={cn('space-y-2', dim && 'opacity-70')}>
+    <ul className="space-y-2">
       {matches.map((m) => {
-        const bundle = bundles.get(m.id);
-        if (!bundle) return null;
-        return <PredictionRow key={m.id} match={m} bundle={bundle} />;
+        const prediction = predictions.get(m.id);
+        if (!prediction) return null;
+        return (
+          <PredictionRow key={m.id} match={m} prediction={prediction} />
+        );
       })}
     </ul>
   );
@@ -238,30 +134,21 @@ function PredictionList({
 
 function PredictionRow({
   match,
-  bundle,
+  prediction,
 }: {
   match: Match;
-  bundle: PredictionBundle;
+  prediction: Prediction;
 }) {
-  // 三引擎各自命中與否
-  const results = (['paul', 'doctor', 'oracle'] as const).map((id) => ({
-    id,
-    meta: ENGINE_META[id],
-    ...evaluatePrediction(bundle[id], match),
-  }));
-
-  const correctCount = results.filter((r) => r.correct).length;
-  const allWrong = correctCount === 0;
-  const allCorrect = correctCount === 3;
+  const { correct } = evaluatePrediction(prediction, match);
   const isDrawResult = match.score?.winner === 'DRAW';
 
   return (
     <li
       className={cn(
         'flex flex-col gap-2 rounded-2xl border bg-slate-900/50 px-4 py-3 transition sm:flex-row sm:items-center sm:gap-4',
-        allCorrect && 'border-amber-500/40 bg-amber-500/5',
-        !allCorrect && correctCount > 0 && 'border-emerald-500/20',
-        allWrong && 'border-rose-500/20',
+        correct
+          ? 'border-emerald-500/30 bg-emerald-500/5'
+          : 'border-rose-500/20',
       )}
     >
       {/* 比賽資訊 */}
@@ -285,28 +172,26 @@ function PredictionRow({
         </div>
       </div>
 
-      {/* 三隻章魚哥的預測結果 */}
-      <div className="grid grid-cols-3 gap-1.5 sm:flex sm:gap-2">
-        {results.map((r) => (
-          <div
-            key={r.id}
-            className={cn(
-              'flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px]',
-              r.correct
-                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                : 'border-rose-500/30 bg-rose-500/5 text-rose-300',
-            )}
-            title={`${r.meta.name}：${r.prediction.pickedTeamName}`}
-          >
-            <span>{r.meta.emoji}</span>
-            <span>{r.prediction.pickedTeamFlag}</span>
-            {r.correct ? (
-              <CheckCircle2 className="h-3 w-3" />
-            ) : (
-              <XCircle className="h-3 w-3" />
-            )}
-          </div>
-        ))}
+      {/* 章魚哥預測結果 */}
+      <div
+        className={cn(
+          'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
+          correct
+            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+            : 'border-rose-500/30 bg-rose-500/5 text-rose-300',
+        )}
+        title={`章魚哥：${prediction.pickedTeamName}`}
+      >
+        <span className="text-base">🐙</span>
+        <span>{prediction.pickedTeamFlag}</span>
+        <span className="hidden font-medium sm:inline">
+          {prediction.pickedTeamName}
+        </span>
+        {correct ? (
+          <CheckCircle2 className="h-3.5 w-3.5" />
+        ) : (
+          <XCircle className="h-3.5 w-3.5" />
+        )}
       </div>
     </li>
   );

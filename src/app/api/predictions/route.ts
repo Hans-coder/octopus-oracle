@@ -1,41 +1,35 @@
 import { NextResponse } from 'next/server';
 import { getAggregatedData } from '@/lib/page-data';
 import { evaluatePrediction } from '@/lib/octopus';
-import type { EngineId, PredictionResult } from '@/types';
 
 /**
  * GET /api/predictions
- * 取得三隻章魚哥對所有比賽的預測 + 各引擎準確率統計
+ * 取得章魚哥對所有比賽的預測 + 累積準確率
  */
 export async function GET() {
   try {
-    const { matches, bundles, accuracies, llmProvider } =
+    const { matches, predictions, accuracy, llmProvider } =
       await getAggregatedData();
 
-    const detail = matches.map((match) => {
-      const bundle = bundles.get(match.id);
-      if (!bundle) return null;
-
-      const perEngine: Record<EngineId, PredictionResult> = {
-        paul: evaluatePrediction(bundle.paul, match),
-        doctor: evaluatePrediction(bundle.doctor, match),
-        oracle: evaluatePrediction(bundle.oracle, match),
-      };
-
-      return {
-        match,
-        consensus: bundle.consensus,
-        paul: { ...bundle.paul, ...perEngine.paul },
-        doctor: { ...bundle.doctor, ...perEngine.doctor },
-        oracle: { ...bundle.oracle, ...perEngine.oracle },
-      };
-    });
+    const detail = matches
+      .map((match) => {
+        const prediction = predictions.get(match.id);
+        if (!prediction) return null;
+        const result = evaluatePrediction(prediction, match);
+        return {
+          match,
+          prediction,
+          actual: result.actual,
+          correct: result.correct,
+        };
+      })
+      .filter(Boolean);
 
     return NextResponse.json({
       ok: true,
       llmProvider,
-      accuracies,
-      predictions: detail.filter(Boolean),
+      accuracy,
+      predictions: detail,
     });
   } catch (err) {
     return NextResponse.json(

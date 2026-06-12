@@ -1,44 +1,35 @@
 'use client';
 
 import { Clock, MapPin, CheckCircle2, XCircle, Trophy } from 'lucide-react';
-import type { Match, Odds, PredictionBundle, EngineId } from '@/types';
+import type { Match, Odds, Prediction } from '@/types';
 import { cn, formatTaiwanTime, statusToChinese } from '@/lib/utils';
 import { useRevealed } from '@/lib/use-revealed';
-import { ENGINE_META, actualPickFromMatch } from '@/lib/octopus';
+import { actualPickFromMatch } from '@/lib/octopus';
 import OctopusPredictor from './OctopusPredictor';
 import OddsDisplay from './OddsDisplay';
 
 interface MatchCardProps {
   match: Match;
   odds?: Odds;
-  bundle?: PredictionBundle;
+  prediction?: Prediction;
 }
 
-export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
+export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
   const isFinished = match.status === 'FINISHED';
   const isLive = match.status === 'LIVE' || match.status === 'IN_PLAY';
   const winner = match.score?.winner;
 
-  // 已結束 / 進行中的比賽自動揭曉，避免使用者要按按鈕
   const autoReveal = isFinished || isLive;
   const { revealed, hydrated, markRevealed } = useRevealed(match.id, autoReveal);
 
-  // 神諭主角（決定 odds highlight 用哪一隻的 pick）：章魚哥本人
-  const heroPick = bundle?.paul.pick;
-
-  // 比賽結果評估（只在 finished 時有意義）
   const actual = isFinished ? actualPickFromMatch(match) : null;
-  const correctEngines = bundle
-    ? (['paul', 'doctor', 'oracle'] as EngineId[]).filter(
-        (id) => bundle[id].pick === actual,
-      )
-    : [];
+  const isCorrect =
+    isFinished && prediction && actual ? prediction.pick === actual : null;
 
   return (
     <article
       className={cn(
         'group flex flex-col gap-4 rounded-3xl border bg-slate-900/60 p-5 backdrop-blur-sm transition',
-        // 已結束的卡邊框略亮 / live 時紅色微微脈動
         isFinished
           ? 'border-white/15 hover:border-amber-400/30 hover:shadow-[0_0_30px_-15px_rgba(251,191,36,0.4)]'
           : isLive
@@ -46,7 +37,6 @@ export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
             : 'border-white/10 hover:border-cyan-400/30 hover:shadow-[0_0_30px_-15px_rgba(34,211,238,0.4)]',
       )}
     >
-      {/* Header — 時間 / 狀態 + 熱身賽標籤 */}
       <div className="flex items-center justify-between text-xs text-slate-400">
         <span className="inline-flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
@@ -77,11 +67,11 @@ export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
         </div>
       </div>
 
-      {/* 雙方對戰 — 已結束時放大比分 + 加贏家框 */}
       <div
         className={cn(
           'grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl p-1 transition',
-          isFinished && 'bg-gradient-to-r from-transparent via-slate-800/40 to-transparent',
+          isFinished &&
+            'bg-gradient-to-r from-transparent via-slate-800/40 to-transparent',
         )}
       >
         <TeamBlock
@@ -98,7 +88,9 @@ export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
             <div
               className={cn(
                 'font-mono font-bold text-white tabular-nums',
-                isFinished ? 'text-3xl drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]' : 'text-2xl',
+                isFinished
+                  ? 'text-3xl drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]'
+                  : 'text-2xl',
               )}
             >
               <span
@@ -144,7 +136,6 @@ export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
         />
       </div>
 
-      {/* 場館 */}
       {match.venue && (
         <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
           <MapPin className="h-3 w-3" />
@@ -152,26 +143,19 @@ export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
         </div>
       )}
 
-      {/* 比賽結束 — 章魚哥神諭審判結果（在賠率之上） */}
-      {isFinished && bundle && actual && (
-        <PredictionVerdict
-          bundle={bundle}
-          actual={actual}
-          correctCount={correctEngines.length}
-        />
+      {isFinished && prediction && isCorrect !== null && (
+        <PredictionVerdict prediction={prediction} isCorrect={isCorrect} />
       )}
 
-      {/* 賠率 — 只有揭曉後才 highlight 章魚哥（hero）選的那項 */}
       <OddsDisplay
         odds={odds}
-        highlight={heroPick}
+        highlight={prediction?.pick}
         showHighlight={hydrated && revealed}
       />
 
-      {/* 三隻章魚哥神諭 */}
-      {bundle && (
+      {prediction && (
         <OctopusPredictor
-          bundle={bundle}
+          prediction={prediction}
           match={match}
           revealed={revealed}
           hydrated={hydrated}
@@ -184,76 +168,55 @@ export default function MatchCard({ match, odds, bundle }: MatchCardProps) {
 }
 
 /* ────────────────────────────────────────────────────────── */
-/*  PredictionVerdict — 賽後三隻章魚哥對錯總結               */
+/*  PredictionVerdict — 賽後章魚哥對錯總結                   */
 /* ────────────────────────────────────────────────────────── */
 function PredictionVerdict({
-  bundle,
-  actual,
-  correctCount,
+  prediction,
+  isCorrect,
 }: {
-  bundle: PredictionBundle;
-  actual: 'HOME' | 'DRAW' | 'AWAY';
-  correctCount: number;
+  prediction: Prediction;
+  isCorrect: boolean;
 }) {
-  const engines: EngineId[] = ['paul', 'doctor', 'oracle'];
-  const allCorrect = correctCount === 3;
-  const allWrong = correctCount === 0;
-
   return (
     <div
       className={cn(
         'flex items-center justify-between gap-2 rounded-2xl border px-3 py-2',
-        allCorrect && 'border-amber-400/40 bg-amber-500/10',
-        allWrong && 'border-rose-500/30 bg-rose-500/5',
-        !allCorrect && !allWrong && 'border-emerald-500/25 bg-emerald-500/5',
+        isCorrect
+          ? 'border-amber-400/40 bg-amber-500/10'
+          : 'border-rose-500/30 bg-rose-500/5',
       )}
     >
       <div className="flex items-center gap-1.5 text-[11px]">
-        {allCorrect ? (
+        {isCorrect ? (
           <Trophy className="h-3.5 w-3.5 text-amber-300" />
-        ) : allWrong ? (
-          <XCircle className="h-3.5 w-3.5 text-rose-300" />
         ) : (
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+          <XCircle className="h-3.5 w-3.5 text-rose-300" />
         )}
         <span
           className={cn(
             'font-medium',
-            allCorrect && 'text-amber-200',
-            allWrong && 'text-rose-200',
-            !allCorrect && !allWrong && 'text-emerald-200',
+            isCorrect ? 'text-amber-200' : 'text-rose-200',
           )}
         >
-          {allCorrect && '三隻全猜中！'}
-          {allWrong && '三隻全槓龜 🥲'}
-          {!allCorrect && !allWrong && `${correctCount} / 3 隻猜中`}
+          {isCorrect ? '章魚哥神準命中！' : '章魚哥這次失準 🥲'}
         </span>
       </div>
-      <div className="flex items-center gap-1.5">
-        {engines.map((id) => {
-          const p = bundle[id];
-          const meta = ENGINE_META[id];
-          const correct = p.pick === actual;
-          return (
-            <div
-              key={id}
-              className={cn(
-                'flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px]',
-                correct
-                  ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
-                  : 'border-rose-400/30 bg-rose-500/10 text-rose-200',
-              )}
-              title={`${meta.name}：${p.pickedTeamName}${correct ? '（命中）' : '（未中）'}`}
-            >
-              <span>{meta.emoji}</span>
-              {correct ? (
-                <CheckCircle2 className="h-2.5 w-2.5" />
-              ) : (
-                <XCircle className="h-2.5 w-2.5" />
-              )}
-            </div>
-          );
-        })}
+      <div
+        className={cn(
+          'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px]',
+          isCorrect
+            ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
+            : 'border-rose-400/30 bg-rose-500/10 text-rose-200',
+        )}
+        title={`章魚哥選了 ${prediction.pickedTeamName}`}
+      >
+        <span>🐙</span>
+        <span>{prediction.pickedTeamFlag}</span>
+        {isCorrect ? (
+          <CheckCircle2 className="h-2.5 w-2.5" />
+        ) : (
+          <XCircle className="h-2.5 w-2.5" />
+        )}
       </div>
     </div>
   );

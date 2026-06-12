@@ -1,26 +1,19 @@
 import Link from 'next/link';
 import { ArrowRight, Waves, Info } from 'lucide-react';
 import { getAggregatedData } from '@/lib/page-data';
-import { ENGINE_META } from '@/lib/octopus';
-import { isToday, isPast, formatTaiwanDate, cn } from '@/lib/utils';
+import { isToday, isPast, formatTaiwanDate } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
 import StatCard from '@/components/StatCard';
-import type { EngineId } from '@/types';
 
 // 每 5 分鐘重新整理一次（ISR）
 export const revalidate = 300;
 
 // 統計卡顯示「資料蒐集中」的最低樣本數
 const MIN_EVALUATED = 5;
-// 神準率以「章魚哥本人」為代表（leaderboard 看完整三隻）
-const HERO_ENGINE: EngineId = 'paul';
 
 export default async function Dashboard() {
-  const { matches, oddsMap, bundles, accuracies, llmProvider } =
+  const { matches, oddsMap, predictions, accuracy, llmProvider } =
     await getAggregatedData();
-
-  // 統計（只算正賽，熱身賽顯示給 leaderboard 用）
-  const heroStats = accuracies[HERO_ENGINE].official;
 
   // 今日比賽
   const todayMatches = matches
@@ -33,20 +26,19 @@ export default async function Dashboard() {
     .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())
     .slice(0, 6);
 
-  const todayBundle = todayMatches[0]
-    ? bundles.get(todayMatches[0].id)
+  const todayPrediction = todayMatches[0]
+    ? predictions.get(todayMatches[0].id)
     : null;
-  const todayHero = todayBundle?.[HERO_ENGINE];
 
-  // 神準率顯示邏輯
+  // 神準率顯示邏輯（只算正賽）
   const accuracyLabel =
-    heroStats.evaluated < MIN_EVALUATED
+    accuracy.evaluated < MIN_EVALUATED
       ? '—'
-      : `${Math.round(heroStats.accuracy * 100)}%`;
+      : `${Math.round(accuracy.accuracy * 100)}%`;
   const accuracyHint =
-    heroStats.evaluated < MIN_EVALUATED
-      ? `樣本不足・${heroStats.evaluated}/${MIN_EVALUATED} 場`
-      : `${heroStats.correct} / ${heroStats.evaluated} 場命中`;
+    accuracy.evaluated < MIN_EVALUATED
+      ? `樣本不足・${accuracy.evaluated}/${MIN_EVALUATED} 場`
+      : `${accuracy.correct} / ${accuracy.evaluated} 場命中`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
@@ -59,55 +51,26 @@ export default async function Dashboard() {
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-300">
             <Waves className="h-3.5 w-3.5" />
-            2026 FIFA World Cup · 三隻章魚哥神諭啟動中
+            2026 FIFA World Cup · 章魚哥神諭啟動中
           </div>
 
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
             章魚哥<span className="text-cyan-300">神諭</span>
           </h1>
           <p className="mt-3 max-w-xl text-base text-slate-300 sm:text-lg">
-            致敬傳奇章魚保羅 🐙　每場比賽召喚<strong className="text-cyan-200">三隻章魚哥</strong>
-            （直覺派 / 科學派 / AI 派）為你指引方向，結合台灣運彩賠率，朋友圈一起來看誰最神準！
+            致敬傳奇章魚保羅 🐙　每場比賽召喚<strong className="text-cyan-200">深海章魚哥</strong>
+            為你指引方向，結合台灣運彩賠率 + AI 分析，主玩法 + 大小球 / BTTS / 上半場 / 波膽一次看。
           </p>
 
-          {/* 三隻章魚哥介紹 */}
-          <div className="mt-5 grid grid-cols-3 gap-2 sm:max-w-md">
-            {(['paul', 'doctor', 'oracle'] as const).map((id) => {
-              const m = ENGINE_META[id];
-              return (
-                <div
-                  key={id}
-                  className="rounded-xl border border-white/10 bg-slate-900/60 p-2.5 text-center backdrop-blur"
-                  title={m.description}
-                >
-                  <div className="text-xl">{m.emoji}</div>
-                  <div className="mt-0.5 text-[10px] font-medium text-white">
-                    {m.shortName}
-                  </div>
-                  <div
-                    className={cn(
-                      'text-[9px]',
-                      m.accent === 'cyan' && 'text-cyan-300/80',
-                      m.accent === 'emerald' && 'text-emerald-300/80',
-                      m.accent === 'violet' && 'text-violet-300/80',
-                    )}
-                  >
-                    {m.title}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {todayHero && (
+          {todayPrediction && (
             <div className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3 backdrop-blur">
-              <span className="text-3xl">{todayHero.pickedTeamFlag}</span>
+              <span className="text-3xl">{todayPrediction.pickedTeamFlag}</span>
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-cyan-300/80">
-                  🐙 章魚哥本人・今日首戰
+                  🐙 章魚哥・今日首戰
                 </div>
                 <div className="text-base font-bold text-white">
-                  {todayHero.pickedTeamName} 將勝出
+                  {todayPrediction.pickedTeamName} 將勝出
                 </div>
               </div>
             </div>
@@ -127,8 +90,8 @@ export default async function Dashboard() {
         <StatCard
           icon="🐙"
           label="累積預測"
-          value={heroStats.total}
-          hint={`正賽 ${heroStats.total} 場`}
+          value={accuracy.total}
+          hint={`正賽 ${accuracy.total} 場`}
           accent="emerald"
         />
         <Link
@@ -138,7 +101,7 @@ export default async function Dashboard() {
         >
           <StatCard
             icon="🎯"
-            label="正賽神準率"
+            label="神準率"
             value={accuracyLabel}
             hint={accuracyHint}
             accent="amber"
@@ -153,13 +116,13 @@ export default async function Dashboard() {
         />
       </section>
 
-      {/* 樣本不足提示（解決「14% 看起來很不準」的問題） */}
-      {heroStats.evaluated < MIN_EVALUATED && (
+      {/* 樣本不足提示 */}
+      {accuracy.evaluated < MIN_EVALUATED && (
         <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-200/90">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div>
             <strong>神準率計算中：</strong>
-            目前正賽樣本只有 {heroStats.evaluated} 場，至少需要 {MIN_EVALUATED} 場才有統計意義。
+            目前正賽樣本只有 {accuracy.evaluated} 場，至少需要 {MIN_EVALUATED} 場才有統計意義。
             <Link
               href="/leaderboard"
               className="ml-1 underline decoration-amber-300/50 underline-offset-2 hover:text-amber-200"
@@ -198,7 +161,7 @@ export default async function Dashboard() {
                 key={m.id}
                 match={m}
                 odds={oddsMap.get(m.id)}
-                bundle={bundles.get(m.id)}
+                prediction={predictions.get(m.id)}
               />
             ))}
           </div>
@@ -217,7 +180,7 @@ export default async function Dashboard() {
                 key={m.id}
                 match={m}
                 odds={oddsMap.get(m.id)}
-                bundle={bundles.get(m.id)}
+                prediction={predictions.get(m.id)}
               />
             ))}
           </div>
@@ -226,7 +189,7 @@ export default async function Dashboard() {
 
       {/* LLM provider 狀態 footer */}
       <p className="mt-12 text-center text-[11px] text-slate-500">
-        🔮 章魚神諭官目前 provider：<span className="font-mono">{llmProvider}</span>
+        🐙 章魚哥 AI provider：<span className="font-mono">{llmProvider}</span>
         {llmProvider === 'mock' && '（設定 OPENAI_API_KEY 或 ANTHROPIC_API_KEY 可啟用真實 LLM）'}
       </p>
     </div>

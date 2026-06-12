@@ -145,7 +145,7 @@ export interface InjuryReport {
   severity: number;
 }
 
-/** 整場比賽的統計特徵（給 doctor / oracle 用） */
+/** 整場比賽的統計特徵（給章魚哥分析用） */
 export interface MatchStats {
   matchId: string;
   homeForm: TeamForm;
@@ -171,20 +171,20 @@ export interface LLMAnalysis {
   generatedAt: string;
 }
 
-/** 三隻章魚哥的識別 */
-export type EngineId = 'paul' | 'doctor' | 'oracle';
+/** 章魚哥的識別 — 只剩一隻致敬版 Paul，保留 type 給未來擴充 */
+export type EngineId = 'paul';
 
-export const ENGINE_IDS: readonly EngineId[] = ['paul', 'doctor', 'oracle'] as const;
+export const ENGINE_IDS: readonly EngineId[] = ['paul'] as const;
 
 export interface EngineMeta {
   id: EngineId;
   emoji: string;
-  name: string;          // 「章魚哥本人」
+  name: string;          // 「章魚哥」
   shortName: string;     // 「章魚哥」
-  title: string;         // 「直覺派」
-  description: string;   // 「靠深海感應，可能翻盤」
+  title: string;         // 「神諭」
+  description: string;
   accent: 'cyan' | 'emerald' | 'violet';
-  color: string;         // hex / tailwind hue
+  color: string;
 }
 
 export interface Prediction {
@@ -197,14 +197,14 @@ export interface Prediction {
   reasoning: string;        // 神諭文字
   pickedTeamName: string;   // 顯示用
   pickedTeamFlag: string;
-  /** LLM provider 標籤（僅 oracle 引擎使用） */
+  /** LLM provider 標籤（有設 API key 時會帶） */
   source?: 'mock' | 'openai' | 'anthropic';
   /** 多玩法神諭（大小球 / BTTS / 上半場 / 波膽 / 進球數 / 讓分） */
   extras?: MultiMarketPicks;
 }
 
 /**
- * 三隻章魚哥對「其他玩法」的選擇
+ * 章魚哥對「其他玩法」的選擇
  * - 每個欄位都帶 confidence (0-1) 與簡短理由
  * - 全部都是 optional，UI 沒拿到就不顯示
  */
@@ -250,34 +250,16 @@ export interface MultiMarketPicks {
   };
 }
 
-/** 一場比賽三隻章魚哥的完整預測 */
-export interface PredictionBundle {
-  matchId: string;
-  paul: Prediction;
-  doctor: Prediction;
-  oracle: Prediction;
-  /** 三者意見是否一致；不一致時 UI 會 highlight */
-  consensus: PredictionPick | null;
-}
-
 export interface PredictionResult {
   prediction: Prediction;
   actual: PredictionPick | null;
   correct: boolean | null;
 }
 
-/** 單一引擎、單一分桶的命中率 */
+/** 章魚哥的累積準確率 */
 export interface AccuracyBucket {
   total: number;
   evaluated: number;
   correct: number;
   accuracy: number;
-}
-
-/** 單一引擎在「正賽 / 熱身賽 / 全部」的成績 */
-export interface EngineAccuracy {
-  engine: EngineId;
-  official: AccuracyBucket;
-  friendly: AccuracyBucket;
-  combined: AccuracyBucket;
 }

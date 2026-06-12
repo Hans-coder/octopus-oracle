@@ -5,7 +5,7 @@ import MatchCard from '@/components/MatchCard';
 export const revalidate = 300;
 
 export default async function MatchesPage() {
-  const { matches, oddsMap, bundles } = await getAggregatedData();
+  const { matches, oddsMap, predictions } = await getAggregatedData();
 
   // 按日期分組
   const grouped = matches
@@ -26,7 +26,7 @@ export default async function MatchesPage() {
           全部賽程
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          共 {matches.length} 場・每場附三隻章魚哥神諭與台灣運彩賠率（含大小球 / BTTS / 上半場等多種玩法）
+          共 {matches.length} 場・每場附章魚哥神諭與台灣運彩賠率（含大小球 / BTTS / 上半場等多種玩法）
         </p>
       </header>
 
@@ -43,7 +43,7 @@ export default async function MatchesPage() {
                 key={m.id}
                 match={m}
                 odds={oddsMap.get(m.id)}
-                bundle={bundles.get(m.id)}
+                prediction={predictions.get(m.id)}
               />
             ))}
           </div>
