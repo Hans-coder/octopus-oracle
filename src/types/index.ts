@@ -54,8 +54,56 @@ export interface Odds {
   homeWin: number;   // 主勝賠率
   draw: number;      // 和局賠率
   awayWin: number;   // 客勝賠率
+  /** 衍生玩法（大小球 / BTTS / 上半場 / 進球數 / 波膽 / 讓分） */
+  markets?: ExtraMarkets;
   source: string;    // 資料來源（如「台灣運彩」）
   updatedAt: string; // ISO timestamp
+}
+
+/** 大小球（總進球 over/under line） */
+export interface OverUnderMarket {
+  line: number;       // 通常 2.5
+  overOdds: number;
+  underOdds: number;
+}
+
+/** 亞洲讓分（讓主隊 line，正值代表主隊讓分） */
+export interface HandicapMarket {
+  line: number;       // e.g. -0.5 表示主隊讓 0.5；+0.5 表示主隊被讓 0.5
+  homeOdds: number;
+  awayOdds: number;
+}
+
+/** BTTS — 雙方都進球 */
+export interface BTTSMarket {
+  yesOdds: number;
+  noOdds: number;
+}
+
+/** 上半場 1X2 */
+export interface HalfTimeMarket {
+  homeWin: number;
+  draw: number;
+  awayWin: number;
+}
+
+/** 正確比分（top N） */
+export interface CorrectScoreMarket {
+  scores: Array<{ home: number; away: number; odds: number }>;
+}
+
+/** 進球數區間 */
+export interface TotalGoalsMarket {
+  brackets: Array<{ label: string; min: number; max: number | null; odds: number }>;
+}
+
+export interface ExtraMarkets {
+  overUnder?: OverUnderMarket;
+  handicap?: HandicapMarket;
+  btts?: BTTSMarket;
+  halfTime?: HalfTimeMarket;
+  correctScore?: CorrectScoreMarket;
+  totalGoals?: TotalGoalsMarket;
 }
 
 export type PredictionPick = 'HOME' | 'DRAW' | 'AWAY';
@@ -151,6 +199,55 @@ export interface Prediction {
   pickedTeamFlag: string;
   /** LLM provider 標籤（僅 oracle 引擎使用） */
   source?: 'mock' | 'openai' | 'anthropic';
+  /** 多玩法神諭（大小球 / BTTS / 上半場 / 波膽 / 進球數 / 讓分） */
+  extras?: MultiMarketPicks;
+}
+
+/**
+ * 三隻章魚哥對「其他玩法」的選擇
+ * - 每個欄位都帶 confidence (0-1) 與簡短理由
+ * - 全部都是 optional，UI 沒拿到就不顯示
+ */
+export interface MultiMarketPicks {
+  /** 大小球 (over/under line) */
+  overUnder?: {
+    pick: 'OVER' | 'UNDER';
+    line: number;
+    confidence: number;
+    reasoning?: string;
+  };
+  /** 亞洲讓分 */
+  handicap?: {
+    pick: 'HOME' | 'AWAY';
+    line: number;          // 主隊 handicap
+    confidence: number;
+    reasoning?: string;
+  };
+  /** 雙方都進球 */
+  btts?: {
+    pick: 'YES' | 'NO';
+    confidence: number;
+    reasoning?: string;
+  };
+  /** 上半場 1X2 */
+  halfTime?: {
+    pick: PredictionPick;
+    confidence: number;
+    reasoning?: string;
+  };
+  /** 正確比分 */
+  correctScore?: {
+    home: number;
+    away: number;
+    confidence: number;
+    reasoning?: string;
+  };
+  /** 進球數區間 */
+  totalGoals?: {
+    label: string;         // '0-1' / '2-3' / '4-6' / '7+'
+    confidence: number;
+    reasoning?: string;
+  };
 }
 
 /** 一場比賽三隻章魚哥的完整預測 */

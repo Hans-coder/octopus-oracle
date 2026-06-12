@@ -13,6 +13,7 @@ import {
 import type {
   EngineId,
   Match,
+  MultiMarketPicks,
   Prediction,
   PredictionBundle,
   PredictionPick,
@@ -549,6 +550,15 @@ function RevealedTabbed({
             </motion.p>
           )}
 
+          {/* 多玩法神諭 */}
+          {prediction.extras && (
+            <ExtrasStrip
+              extras={prediction.extras}
+              accent={meta.accent}
+              dimmed={activeCorrect === false}
+            />
+          )}
+
           {activeEngine === 'oracle' && prediction.source && (
             <p className="mt-2 text-[10px] text-slate-500">
               {prediction.source === 'mock'
@@ -558,6 +568,148 @@ function RevealedTabbed({
           )}
         </motion.div>
       </AnimatePresence>
+    </motion.div>
+  );
+}
+
+/* ────────────────────────────────────────────────── */
+/*  多玩法神諭 — 大小球 / BTTS / 上半場 / 進球數 / CS  */
+/* ────────────────────────────────────────────────── */
+
+const EXTRAS_ACCENT_BORDER: Record<'cyan' | 'emerald' | 'violet', string> = {
+  cyan: 'border-cyan-400/30',
+  emerald: 'border-emerald-400/30',
+  violet: 'border-violet-400/30',
+};
+
+function ExtrasStrip({
+  extras,
+  accent,
+  dimmed,
+}: {
+  extras: MultiMarketPicks;
+  accent: 'cyan' | 'emerald' | 'violet';
+  dimmed?: boolean;
+}) {
+  // 順序：波膽 → 大小球 → BTTS → 上半場 → 進球數 → 讓分
+  const pills: Array<{
+    key: string;
+    icon: string;
+    label: string;
+    value: string;
+    title: string;
+    confidence: number;
+  }> = [];
+
+  if (extras.correctScore) {
+    const cs = extras.correctScore;
+    pills.push({
+      key: 'cs',
+      icon: '🎯',
+      label: '波膽',
+      value: `${cs.home}-${cs.away}`,
+      title: cs.reasoning ?? `波膽 ${cs.home}-${cs.away}`,
+      confidence: cs.confidence,
+    });
+  }
+  if (extras.overUnder) {
+    const ou = extras.overUnder;
+    pills.push({
+      key: 'ou',
+      icon: ou.pick === 'OVER' ? '⬆️' : '⬇️',
+      label: `大小 ${ou.line}`,
+      value: ou.pick === 'OVER' ? '大' : '小',
+      title: ou.reasoning ?? `${ou.pick === 'OVER' ? '大' : '小'}盤`,
+      confidence: ou.confidence,
+    });
+  }
+  if (extras.btts) {
+    pills.push({
+      key: 'btts',
+      icon: extras.btts.pick === 'YES' ? '⚽' : '🛡️',
+      label: 'BTTS',
+      value: extras.btts.pick === 'YES' ? '是' : '否',
+      title:
+        extras.btts.reasoning ??
+        `雙方都進球：${extras.btts.pick === 'YES' ? '是' : '否'}`,
+      confidence: extras.btts.confidence,
+    });
+  }
+  if (extras.halfTime) {
+    const htLabel =
+      extras.halfTime.pick === 'HOME'
+        ? '主'
+        : extras.halfTime.pick === 'AWAY'
+          ? '客'
+          : '和';
+    pills.push({
+      key: 'ht',
+      icon: '🥚',
+      label: '上半場',
+      value: htLabel,
+      title: extras.halfTime.reasoning ?? `上半場：${htLabel}`,
+      confidence: extras.halfTime.confidence,
+    });
+  }
+  if (extras.totalGoals) {
+    pills.push({
+      key: 'tg',
+      icon: '🔢',
+      label: '進球數',
+      value: extras.totalGoals.label,
+      title:
+        extras.totalGoals.reasoning ??
+        `總進球落點：${extras.totalGoals.label}`,
+      confidence: extras.totalGoals.confidence,
+    });
+  }
+  if (extras.handicap) {
+    const sign = extras.handicap.line > 0 ? '+' : '';
+    pills.push({
+      key: 'ah',
+      icon: '⚖️',
+      label: `讓分 ${sign}${extras.handicap.line}`,
+      value: extras.handicap.pick === 'HOME' ? '主' : '客',
+      title:
+        extras.handicap.reasoning ??
+        `讓分 ${sign}${extras.handicap.line}：${extras.handicap.pick === 'HOME' ? '主' : '客'}`,
+      confidence: extras.handicap.confidence,
+    });
+  }
+
+  if (pills.length === 0) return null;
+
+  return (
+    <motion.div
+      className={cn('mt-3', dimmed && 'opacity-60')}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: dimmed ? 0.6 : 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+    >
+      <div className="mb-1.5 flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-slate-500">
+        <span>📊</span>
+        <span>多玩法神諭</span>
+        <span className="h-px flex-1 bg-white/5" />
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {pills.map((p) => (
+          <span
+            key={p.key}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full border bg-slate-900/60 px-2 py-0.5 text-[10px]',
+              EXTRAS_ACCENT_BORDER[accent],
+            )}
+            title={`${p.title}（信心 ${Math.round(p.confidence * 100)}%）`}
+          >
+            <span>{p.icon}</span>
+            <span className="text-slate-400">{p.label}</span>
+            <span className="font-bold text-white">{p.value}</span>
+            <span className="text-[9px] text-slate-500">
+              {Math.round(p.confidence * 100)}%
+            </span>
+          </span>
+        ))}
+      </div>
     </motion.div>
   );
 }

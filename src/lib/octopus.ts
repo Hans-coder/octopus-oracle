@@ -4,6 +4,7 @@ import type {
   LLMAnalysis,
   Match,
   MatchStats,
+  MultiMarketPicks,
   Odds,
   Prediction,
   PredictionBundle,
@@ -14,6 +15,14 @@ import type {
   EngineAccuracy,
 } from '@/types';
 import { ENGINE_IDS } from '@/types';
+import {
+  btts as bttsModel,
+  correctScoreTop,
+  expectedGoals,
+  halfTime1x2,
+  overUnder,
+  totalGoalsBrackets,
+} from './markets';
 import { seededRandom, stringToSeed } from './utils';
 
 /**
@@ -190,6 +199,168 @@ function isHomeNation(match: Match) {
 }
 
 // ─────────────────────────────────────────────
+// 多玩法預測（大小球 / BTTS / 上半場 / 進球數 / 波膽 / 讓分）
+// 從 odds.markets 拿賠率（已含 Poisson 推算過的機率）
+// 三隻章魚哥各有個性：
+//   - paul (直覺派)：偏好戲劇化選項（OVER / BTTS=YES / 上半場=DRAW），confidence 中等
+//   - doctor (科學派)：純 argmax，confidence = 該選項機率
+//   - oracle (AI 派)：argmax + 微調，會在 LLM 啟用時參考 LLM 機率
+// ─────────────────────────────────────────────
+type EngineStyle = 'paul' | 'doctor' | 'oracle';
+
+/** 把「odds 賠率陣列」轉成正規化機率（含莊家抽水修正） */
+function oddsArrToProbs(arr: number[]): number[] {
+  const ps = arr.map((o) => 1 / Math.max(o, 1.01));
+  const sum = ps.reduce((s, p) => s + p, 0) || 1;
+  return ps.map((p) => p / sum);
+}
+
+function computeMarketExtras(
+  match: Match,
+  ctx: PredictContext,
+  style: EngineStyle,
+  rng: () => number,
+): MultiMarketPicks {
+  const extras: MultiMarketPicks = {};
+  const markets = ctx.odds?.markets;
+
+  // ── 用 Poisson 取得「真實機率」做為三隻決策基底 ──
+  // 主場優勢只對美加墨適用（與 mock-data 一致）
+  const isHomeAdv = isHomeNation(match);
+  const { lambdaHome, lambdaAway } = expectedGoals(
+    match.homeTeam.tla,
+    match.awayTeam.tla,
+    isHomeAdv,
+  );
+
+  // ── 大小球 ──
+  const ou = overUnder(lambdaHome, lambdaAway, 2.5);
+  let ouPick: 'OVER' | 'UNDER';
+  let ouConf: number;
+  if (style === 'paul') {
+    // 直覺派偏 OVER（更有戲），但機率差距大時也會理性
+    ouPick = ou.over + 0.06 >= ou.under ? 'OVER' : 'UNDER';
+    ouConf = ouPick === 'OVER' ? Math.min(0.78, ou.over + 0.06) : ou.under;
+  } else {
+    ouPick = ou.over >= ou.under ? 'OVER' : 'UNDER';
+    ouConf = Math.max(ou.over, ou.under);
+    // doctor 給小幅噪音
+    if (style === 'doctor') ouConf = Math.min(0.95, ouConf + (rng() - 0.5) * 0.02);
+  }
+  extras.overUnder = {
+    pick: ouPick,
+    line: markets?.overUnder?.line ?? 2.5,
+    confidence: ouConf,
+    reasoning: ouPick === 'OVER'
+      ? `預期進球 ${(lambdaHome + lambdaAway).toFixed(1)}，大盤機率 ${Math.round(ou.over * 100)}%`
+      : `防守對決，總進球機率不到 2.5 球（${Math.round(ou.under * 100)}%）`,
+  };
+
+  // ── BTTS ──
+  const bt = bttsModel(lambdaHome, lambdaAway);
+  let bttsPick: 'YES' | 'NO';
+  let bttsConf: number;
+  if (style === 'paul') {
+    bttsPick = bt.yes + 0.05 >= bt.no ? 'YES' : 'NO'; // 直覺派偏 YES
+    bttsConf = bttsPick === 'YES' ? Math.min(0.78, bt.yes + 0.05) : bt.no;
+  } else {
+    bttsPick = bt.yes >= bt.no ? 'YES' : 'NO';
+    bttsConf = Math.max(bt.yes, bt.no);
+  }
+  extras.btts = {
+    pick: bttsPick,
+    confidence: bttsConf,
+    reasoning: bttsPick === 'YES'
+      ? `兩隊鋒線都有破門能力（${Math.round(bt.yes * 100)}%）`
+      : `至少一方會被門將守住（${Math.round(bt.no * 100)}%）`,
+  };
+
+  // ── 上半場 1X2 ──
+  const ht = halfTime1x2(lambdaHome, lambdaAway);
+  let htPick: PredictionPick;
+  let htConf: number;
+  if (style === 'paul') {
+    // 直覺派愛猜「上半場和局」（觀眾期待度高）
+    const tweaked = {
+      home: ht.home,
+      draw: ht.draw + 0.08,
+      away: ht.away,
+    };
+    const top = Object.entries(tweaked).sort(
+      ([, a], [, b]) => b - a,
+    )[0];
+    htPick = top[0].toUpperCase() as PredictionPick;
+    htConf = top[1];
+  } else {
+    if (ht.home >= ht.draw && ht.home >= ht.away) {
+      htPick = 'HOME';
+      htConf = ht.home;
+    } else if (ht.away >= ht.draw) {
+      htPick = 'AWAY';
+      htConf = ht.away;
+    } else {
+      htPick = 'DRAW';
+      htConf = ht.draw;
+    }
+  }
+  extras.halfTime = {
+    pick: htPick,
+    confidence: htConf,
+    reasoning:
+      htPick === 'DRAW'
+        ? `上半場慢熱，雙方互探虛實`
+        : htPick === 'HOME'
+          ? `${match.homeTeam.name} 開賽火力較強`
+          : `${match.awayTeam.name} 客場壓迫，上半場領先`,
+  };
+
+  // ── 進球數區間 ──
+  const tg = totalGoalsBrackets(lambdaHome, lambdaAway);
+  const tgSorted = [...tg].sort((a, b) => b.prob - a.prob);
+  // paul 偶爾選第二名以製造驚奇
+  const tgChoice =
+    style === 'paul' && tgSorted.length > 1 && rng() < 0.18
+      ? tgSorted[1]
+      : tgSorted[0];
+  extras.totalGoals = {
+    label: tgChoice.label,
+    confidence: tgChoice.prob,
+    reasoning: `預估總進球落在 ${tgChoice.label} 區間（${Math.round(tgChoice.prob * 100)}%）`,
+  };
+
+  // ── 正確比分 top 3 → 取一 ──
+  const csTop = correctScoreTop(lambdaHome, lambdaAway, 3);
+  // paul 偶爾從 top3 抽一個非最高的（戲劇性）
+  let csChoice = csTop[0];
+  if (style === 'paul' && csTop.length > 1 && rng() < 0.35) {
+    csChoice = csTop[Math.floor(rng() * Math.min(3, csTop.length))];
+  }
+  extras.correctScore = {
+    home: csChoice.home,
+    away: csChoice.away,
+    confidence: csChoice.prob,
+    reasoning: `波膽神諭：${match.homeTeam.tla} ${csChoice.home}-${csChoice.away} ${match.awayTeam.tla}`,
+  };
+
+  // ── 讓分（沿用 odds.markets 的賠率 → 推回機率） ──
+  if (markets?.handicap) {
+    const [pH, pA] = oddsArrToProbs([
+      markets.handicap.homeOdds,
+      markets.handicap.awayOdds,
+    ]);
+    const ahPick: 'HOME' | 'AWAY' = pH >= pA ? 'HOME' : 'AWAY';
+    extras.handicap = {
+      pick: ahPick,
+      line: markets.handicap.line,
+      confidence: Math.max(pH, pA),
+      reasoning: `讓分線 ${markets.handicap.line > 0 ? '+' : ''}${markets.handicap.line}：吃 ${ahPick === 'HOME' ? match.homeTeam.name : match.awayTeam.name}`,
+    };
+  }
+
+  return extras;
+}
+
+// ─────────────────────────────────────────────
 // 章魚哥本人 — Paul (直覺派)
 // ─────────────────────────────────────────────
 const PAUL_REASONINGS = [
@@ -227,13 +398,15 @@ export function predictPaul(match: Match, ctx: PredictContext): Prediction {
     { probs: ctx.stats.eloProbs, weight: 0.4 },
   );
   const adjusted = applyAdjustments(base, isHomeNation(match));
-  // 章魚哥的「叛逆」
+  // 章魚哥的「叛逯」
   const final = chaosBlend(adjusted, PAUL_CHAOS);
   const { pick, confidence } = argmax(final, rng);
 
-  return buildPrediction('paul', match, pick, confidence, final, (info) =>
+  const p = buildPrediction('paul', match, pick, confidence, final, (info) =>
     paulReasoning(seed, info.pickedTeamName, info.isDraw),
   );
+  p.extras = computeMarketExtras(match, ctx, 'paul', rng);
+  return p;
 }
 
 // ─────────────────────────────────────────────
@@ -289,7 +462,7 @@ export function predictDoctor(match: Match, ctx: PredictContext): Prediction {
   const final = chaosBlend(adjusted, DOCTOR_EPSILON);
   const { pick, confidence } = argmax(final, rng);
 
-  return buildPrediction('doctor', match, pick, confidence, final, (info) =>
+  const p = buildPrediction('doctor', match, pick, confidence, final, (info) =>
     doctorReasoning(
       match,
       ctx,
@@ -298,6 +471,8 @@ export function predictDoctor(match: Match, ctx: PredictContext): Prediction {
       info.isDraw,
     ),
   );
+  p.extras = computeMarketExtras(match, ctx, 'doctor', rng);
+  return p;
 }
 
 // ─────────────────────────────────────────────
@@ -339,6 +514,7 @@ export function predictOracle(match: Match, ctx: PredictContext): Prediction {
 
   const p = buildPrediction('oracle', match, pick, confidence, final, () => reasoning);
   p.source = source;
+  p.extras = computeMarketExtras(match, ctx, 'oracle', rng);
   return p;
 }
 

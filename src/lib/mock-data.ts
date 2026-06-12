@@ -1,4 +1,15 @@
-import type { Match, Odds, Team } from '@/types';
+import type { Match, Odds, Team, ExtraMarkets } from '@/types';
+import {
+  asianHandicap,
+  btts as bttsModel,
+  correctScoreTop,
+  expectedGoals,
+  halfTime1x2,
+  overUnder,
+  probToOdds,
+  probs1x2,
+  totalGoalsBrackets,
+} from './markets';
 import { seededRandom, stringToSeed } from './utils';
 
 /**
@@ -32,30 +43,16 @@ const TEAMS: Record<string, Team> = {
   ECU: { id: 24, name: '厄瓜多', nameEn: 'Ecuador', tla: 'ECU', flag: '🇪🇨', group: 'L' },
 };
 
-/** FIFA 排名 — 越低越強，用來生成擬真賠率 */
-const FIFA_RATING: Record<string, number> = {
-  ARG: 95, FRA: 94, ESP: 93, ENG: 92, BRA: 91, POR: 90, NED: 88, BEL: 87,
-  GER: 86, ITA: 85, CRO: 83, JPN: 80, MAR: 79, USA: 78, KOR: 77, SUI: 76,
-  URU: 75, COL: 74, DEN: 73, MEX: 72, SEN: 71, AUS: 68, ECU: 67, CAN: 65,
-};
-
 /**
  * 產生今日 + 接下來 7 天的模擬賽程
  * 開賽日定錨在 2026/06/11（今天）
+ *
+ * 全部都是正式賽程；熱身賽 mock 已移除，等真實 API 接上後再呈現。
  */
 export function generateMockMatches(): Match[] {
   const tournamentStart = new Date('2026-06-11T17:00:00+08:00').getTime();
-  // dayOffset 為負 = 開賽前的熱身賽（已結束），用來示範神準排行功能
   const matchPairs: Array<[string, string, number, number, string]> = [
     // [home, away, dayOffset, hour(TW), venue]
-    // ▼ 熱身賽（已結束，給神準排行有資料看）
-    ['BRA', 'JPN', -3, 20, '熱身賽 · Tokyo'],
-    ['FRA', 'ITA', -3, 23, '熱身賽 · Lyon'],
-    ['ENG', 'GER', -2, 20, '熱身賽 · Wembley'],
-    ['ARG', 'URU', -2, 23, '熱身賽 · Montevideo'],
-    ['ESP', 'POR', -1, 20, '熱身賽 · Madrid'],
-    ['NED', 'BEL', -1, 23, '熱身賽 · Amsterdam'],
-    // ▼ 正式賽程
     ['MEX', 'CAN', 0, 17, 'Estadio Azteca, Mexico City'],
     ['USA', 'JPN', 0, 20, 'SoFi Stadium, Los Angeles'],
     ['BRA', 'KOR', 0, 23, 'MetLife Stadium, New York'],
@@ -89,8 +86,8 @@ export function generateMockMatches(): Match[] {
     const utcDate = tw.toISOString();
     const isPast = tw.getTime() < Date.now();
 
-    // 開賽前的賽事 = 熱身賽（不計入正賽神準率）
-    const isFriendly = dayOffset < 0;
+    // mock 全部是正賽；真實 API 接上後若回傳 friendly tag 再標記
+    const isFriendly = false;
 
     let score: Match['score'];
     let status: Match['status'] = 'SCHEDULED';
@@ -122,35 +119,92 @@ export function generateMockMatches(): Match[] {
 }
 
 /**
- * 根據兩隊 FIFA 評分產生擬真賠率（接近台彩運彩的數值區間）
- * 強隊賠率低、弱隊賠率高，總機率含 8% 莊家抽水
+ * 根據兩隊 FIFA 評分 + Poisson xG 產生擬真賠率
+ *
+ * 主玩法：1X2（主勝 / 和 / 客勝）
+ * 衍生玩法（markets）：
+ *   - O/U 2.5（大小球）
+ *   - 亞洲讓分（讓分線依 Elo 差距自動選）
+ *   - BTTS（雙方都進球）
+ *   - 上半場 1X2
+ *   - 進球數區間（0-1 / 2-3 / 4-6 / 7+）
+ *   - 正確比分 top 6
+ *
+ * 全部含 8% 莊家抽水，與台灣運彩接近。
  */
 export function generateMockOdds(match: Match): Odds {
-  const homeRating = FIFA_RATING[match.homeTeam.tla] ?? 70;
-  const awayRating = FIFA_RATING[match.awayTeam.tla] ?? 70;
-  const diff = homeRating - awayRating;
+  // 世界杯主場優勢只對主辦國成立（USA / CAN / MEX）
+  const isHomeAdvantage = ['USA', 'CAN', 'MEX'].includes(match.homeTeam.tla);
 
-  // 主場優勢 +2
-  const homeStrength = homeRating + 2;
-  const awayStrength = awayRating;
-  const total = homeStrength + awayStrength + 30; // 30 是平手的「強度」
+  const { lambdaHome, lambdaAway } = expectedGoals(
+    match.homeTeam.tla,
+    match.awayTeam.tla,
+    isHomeAdvantage,
+  );
 
-  const pHome = homeStrength / total;
-  const pAway = awayStrength / total;
-  const pDraw = 30 / total;
+  // 1X2 — 用 Poisson 取代之前的線性估算，更貼近真實
+  const main = probs1x2(lambdaHome, lambdaAway);
 
-  // 莊家抽水：機率調高 → 賠率降低
-  const margin = 1.08;
-  const round = (n: number) => Math.round(n * 100) / 100;
+  // O/U 2.5
+  const ou = overUnder(lambdaHome, lambdaAway, 2.5);
+  // 讓分（線根據 Elo 差距 dynamic 決定）
+  const eloDiff = (() => {
+    // 從 markets 拿不到 elo 差，這裡用 lambda 差估
+    return Math.round((lambdaHome - lambdaAway) * 150);
+  })();
+  const ah = asianHandicap(lambdaHome, lambdaAway, eloDiff);
+  // BTTS
+  const btts = bttsModel(lambdaHome, lambdaAway);
+  // 上半場
+  const ht = halfTime1x2(lambdaHome, lambdaAway);
+  // 進球數區間
+  const tg = totalGoalsBrackets(lambdaHome, lambdaAway);
+  // 正確比分
+  const cs = correctScoreTop(lambdaHome, lambdaAway, 6);
 
-  // 微調：差距大時和局賠率拉高
-  const drawAdjust = 1 + Math.abs(diff) / 100;
+  const markets: ExtraMarkets = {
+    overUnder: {
+      line: 2.5,
+      overOdds: probToOdds(ou.over),
+      underOdds: probToOdds(ou.under),
+    },
+    handicap: {
+      line: ah.line,
+      homeOdds: probToOdds(ah.homeWin),
+      awayOdds: probToOdds(ah.awayWin),
+    },
+    btts: {
+      yesOdds: probToOdds(btts.yes),
+      noOdds: probToOdds(btts.no),
+    },
+    halfTime: {
+      homeWin: probToOdds(ht.home),
+      draw: probToOdds(ht.draw),
+      awayWin: probToOdds(ht.away),
+    },
+    totalGoals: {
+      brackets: tg.map((b) => ({
+        label: b.label,
+        min: b.min,
+        max: b.max,
+        odds: probToOdds(b.prob),
+      })),
+    },
+    correctScore: {
+      scores: cs.map((s) => ({
+        home: s.home,
+        away: s.away,
+        odds: probToOdds(s.prob),
+      })),
+    },
+  };
 
   return {
     matchId: match.id,
-    homeWin: round(1 / (pHome * margin)),
-    draw: round((1 / (pDraw * margin)) * drawAdjust),
-    awayWin: round(1 / (pAway * margin)),
+    homeWin: probToOdds(main.home),
+    draw: probToOdds(main.draw),
+    awayWin: probToOdds(main.away),
+    markets,
     source: '台灣運彩（模擬）',
     updatedAt: new Date().toISOString(),
   };

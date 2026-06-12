@@ -19,9 +19,6 @@ export default async function MatchesPage() {
       return acc;
     }, {});
 
-  const officialCount = matches.filter((m) => !m.isFriendly).length;
-  const friendlyCount = matches.length - officialCount;
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <header className="mb-8">
@@ -29,8 +26,7 @@ export default async function MatchesPage() {
           全部賽程
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          共 {matches.length} 場（正賽 {officialCount} / 熱身賽 {friendlyCount}）
-          ・每場附三隻章魚哥神諭與台灣運彩賠率
+          共 {matches.length} 場・每場附三隻章魚哥神諭與台灣運彩賠率（含大小球 / BTTS / 上半場等多種玩法）
         </p>
       </header>
 

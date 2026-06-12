@@ -43,16 +43,13 @@ export default async function LeaderboardPage() {
     return bA.accuracy - aA.accuracy;
   });
 
-  // 最近 finished 比賽（依時間倒序）
+  // 最近 finished 比賽（依時間倒序）— 僅顯示正賽
   const finishedMatches = matches
-    .filter((m) => m.status === 'FINISHED' && m.score?.winner)
+    .filter((m) => m.status === 'FINISHED' && m.score?.winner && !m.isFriendly)
     .sort(
       (a, b) =>
         new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime(),
     );
-
-  const officialFinished = finishedMatches.filter((m) => !m.isFriendly);
-  const friendlyFinished = finishedMatches.filter((m) => m.isFriendly);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
@@ -85,41 +82,24 @@ export default async function LeaderboardPage() {
           <div>
             <strong>正賽神準率尚不穩定：</strong>
             目前只有 {accuracies.paul.official.evaluated} 場正賽結果可評估，
-            少於 {MIN_EVALUATED} 場時樣本太少容易誤導。下方「熱身賽紀錄」僅供示範資料完整性，
-            不列入正式神準率。
+            少於 {MIN_EVALUATED} 場時樣本太少容易誤導，正賽打完後神準率才會穩定下來。
           </div>
         </div>
       )}
 
       {/* 正賽紀錄 */}
-      <section className="mb-10">
+      <section>
         <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white">
           <span className="text-amber-300">🏟️</span>
           正賽紀錄
           <span className="text-xs font-normal text-slate-500">
-            ({officialFinished.length} 場)
+            ({finishedMatches.length} 場)
           </span>
         </h2>
-        {officialFinished.length === 0 ? (
+        {finishedMatches.length === 0 ? (
           <EmptyHint text="正賽尚未開打，章魚哥們正在熱身…" />
         ) : (
-          <PredictionList matches={officialFinished} bundles={bundles} />
-        )}
-      </section>
-
-      {/* 熱身賽紀錄 */}
-      <section>
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white">
-          <span>🏃‍♂️</span>
-          熱身賽紀錄
-          <span className="text-xs font-normal text-slate-500">
-            ({friendlyFinished.length} 場・僅供示範)
-          </span>
-        </h2>
-        {friendlyFinished.length === 0 ? (
-          <EmptyHint text="無熱身賽紀錄" />
-        ) : (
-          <PredictionList matches={friendlyFinished} bundles={bundles} dim />
+          <PredictionList matches={finishedMatches} bundles={bundles} />
         )}
       </section>
     </div>
@@ -176,13 +156,6 @@ function EngineLeaderCard({
           accentClass={ACCENT_TEXT[meta.accent]}
           showAccuracy={hasEnough}
           highlight
-        />
-        {/* 熱身賽 */}
-        <BucketRow
-          label="熱身賽"
-          bucket={accuracy.friendly}
-          accentClass="text-slate-400"
-          showAccuracy={accuracy.friendly.evaluated > 0}
         />
       </div>
 
