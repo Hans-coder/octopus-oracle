@@ -271,7 +271,7 @@ function buildPrompt(
   );
   lines.push(`【Elo 差距】${stats.eloDiff > 0 ? '+' : ''}${stats.eloDiff}（主隊視角）`);
   if (odds) {
-    lines.push(`【台彩賠率】主勝 ${odds.homeWin} / 和 ${odds.draw} / 客勝 ${odds.awayWin}`);
+    lines.push(`【章魚推算盤】不讓分主勝 ${odds.homeWin} / 和局 ${odds.draw} / 不讓分客勝 ${odds.awayWin}`);
   }
   lines.push('');
   lines.push(

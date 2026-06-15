@@ -453,7 +453,7 @@ function RevealedState({
 }
 
 /* ────────────────────────────────────────────────── */
-/*  多玩法神諭 — 大小球 / BTTS / 上半場 / 進球數 / CS  */
+/*  多玩法神諭 — 大小分 / 雙方均得分 / 上半場 / 總進球數 / 波膽  */
 /* ────────────────────────────────────────────────── */
 function ExtrasStrip({
   extras,
@@ -487,7 +487,7 @@ function ExtrasStrip({
     pills.push({
       key: 'ou',
       icon: ou.pick === 'OVER' ? '⬆️' : '⬇️',
-      label: `大小 ${ou.line}`,
+      label: `大小分 ${ou.line}`,
       value: ou.pick === 'OVER' ? '大' : '小',
       title: ou.reasoning ?? `${ou.pick === 'OVER' ? '大' : '小'}盤`,
       confidence: ou.confidence,
@@ -497,11 +497,11 @@ function ExtrasStrip({
     pills.push({
       key: 'btts',
       icon: extras.btts.pick === 'YES' ? '⚽' : '🛡️',
-      label: 'BTTS',
+      label: '雙方均得分',
       value: extras.btts.pick === 'YES' ? '是' : '否',
       title:
         extras.btts.reasoning ??
-        `雙方都進球：${extras.btts.pick === 'YES' ? '是' : '否'}`,
+        `雙方均得分：${extras.btts.pick === 'YES' ? '是' : '否'}`,
       confidence: extras.btts.confidence,
     });
   }
@@ -515,9 +515,9 @@ function ExtrasStrip({
     pills.push({
       key: 'ht',
       icon: '🥚',
-      label: '上半場',
+      label: '上半場不讓分',
       value: htLabel,
-      title: extras.halfTime.reasoning ?? `上半場：${htLabel}`,
+      title: extras.halfTime.reasoning ?? `上半場不讓分：${htLabel}`,
       confidence: extras.halfTime.confidence,
     });
   }
@@ -525,7 +525,7 @@ function ExtrasStrip({
     pills.push({
       key: 'tg',
       icon: '🔢',
-      label: '進球數',
+      label: '總進球數',
       value: extras.totalGoals.label,
       title:
         extras.totalGoals.reasoning ??
@@ -538,11 +538,11 @@ function ExtrasStrip({
     pills.push({
       key: 'ah',
       icon: '⚖️',
-      label: `讓分 ${sign}${extras.handicap.line}`,
+      label: `讓分盤 ${sign}${extras.handicap.line}`,
       value: extras.handicap.pick === 'HOME' ? '主' : '客',
       title:
         extras.handicap.reasoning ??
-        `讓分 ${sign}${extras.handicap.line}：${extras.handicap.pick === 'HOME' ? '主' : '客'}`,
+        `讓分盤 ${sign}${extras.handicap.line}：${extras.handicap.pick === 'HOME' ? '主' : '客'}`,
       confidence: extras.handicap.confidence,
     });
   }

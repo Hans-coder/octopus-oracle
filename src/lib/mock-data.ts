@@ -205,7 +205,7 @@ export function generateMockOdds(match: Match): Odds {
     draw: probToOdds(main.draw),
     awayWin: probToOdds(main.away),
     markets,
-    source: '台灣運彩（模擬）',
+    source: '章魚推算盤',
     updatedAt: new Date().toISOString(),
   };
 }

@@ -26,7 +26,7 @@ export default async function MatchesPage() {
           全部賽程
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          共 {matches.length} 場・每場附章魚哥神諭與台灣運彩賠率（含大小球 / BTTS / 上半場等多種玩法）
+          共 {matches.length} 場・賽程來自 ESPN 官方資料，每場附章魚哥神諭與「章魚推算盤」（含大小分 / 雙方均得分 / 上半場等台彩主要玩法）
         </p>
       </header>
 

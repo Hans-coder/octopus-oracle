@@ -54,13 +54,13 @@ export interface Odds {
   homeWin: number;   // 主勝賠率
   draw: number;      // 和局賠率
   awayWin: number;   // 客勝賠率
-  /** 衍生玩法（大小球 / BTTS / 上半場 / 進球數 / 波膽 / 讓分） */
+  /** 衡生玩法（大小分 / 雙方均得分 / 上半場 / 總進球數 / 波膽 / 讓分盤） */
   markets?: ExtraMarkets;
-  source: string;    // 資料來源（如「台灣運彩」）
+  source: string;    // 資料來源（例「章魚推算盤」）
   updatedAt: string; // ISO timestamp
 }
 
-/** 大小球（總進球 over/under line） */
+/** 大小分（總進球 over/under line） */
 export interface OverUnderMarket {
   line: number;       // 通常 2.5
   overOdds: number;
@@ -199,7 +199,7 @@ export interface Prediction {
   pickedTeamFlag: string;
   /** LLM provider 標籤（有設 API key 時會帶） */
   source?: 'mock' | 'openai' | 'anthropic';
-  /** 多玩法神諭（大小球 / BTTS / 上半場 / 波膽 / 進球數 / 讓分） */
+  /** 多玩法神諭（大小分 / 雙方均得分 / 上半場 / 波膽 / 總進球數 / 讓分盤） */
   extras?: MultiMarketPicks;
 }
 

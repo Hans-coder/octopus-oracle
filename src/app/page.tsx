@@ -59,7 +59,7 @@ export default async function Dashboard() {
           </h1>
           <p className="mt-3 max-w-xl text-base text-slate-300 sm:text-lg">
             致敬傳奇章魚保羅 🐙　每場比賽召喚<strong className="text-cyan-200">深海章魚哥</strong>
-            為你指引方向，結合台灣運彩賠率 + AI 分析，主玩法 + 大小球 / BTTS / 上半場 / 波膽一次看。
+            為你指引方向，賽程來自 ESPN 官方資料，賠率是「章魚推算盤」 + 多玩法神諭（不讓分 / 大小分 / 讓分盤 / 雙方均得分 / 上半場 / 波膽）。
           </p>
 
           {todayPrediction && (

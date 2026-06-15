@@ -33,6 +33,7 @@ export default function OddsDisplay({
     { key: 'AWAY', label: '客勝', value: odds.awayWin },
   ];
 
+  // 「章魚推算盤」是誘明的稱呼，不算 mock；只有舊「模擬」 / mock 才要警告
   const isMock = /模擬|mock/i.test(odds.source);
   const hasExtras =
     !!odds.markets &&
@@ -179,7 +180,7 @@ function OUCell({
   market: NonNullable<NonNullable<Odds['markets']>['overUnder']>;
 }) {
   return (
-    <MarketCell title={`大小球 ${market.line}`}>
+    <MarketCell title={`大小分 ${market.line}`}>
       <TwoCol
         leftLabel="大"
         left={market.overOdds}
@@ -196,7 +197,7 @@ function BTTSCell({
   market: NonNullable<NonNullable<Odds['markets']>['btts']>;
 }) {
   return (
-    <MarketCell title="雙方都進球">
+    <MarketCell title="雙方均得分">
       <TwoCol
         leftLabel="是"
         left={market.yesOdds}
@@ -213,7 +214,7 @@ function HTCell({
   market: NonNullable<NonNullable<Odds['markets']>['halfTime']>;
 }) {
   return (
-    <MarketCell title="上半場 1X2">
+    <MarketCell title="上半場不讓分">
       <div className="grid grid-cols-3 gap-1 font-mono text-[11px]">
         <span className="text-center text-slate-400">
           主<span className="block tabular-nums text-white">{market.homeWin.toFixed(2)}</span>
@@ -236,7 +237,7 @@ function AHCell({
 }) {
   const sign = market.line > 0 ? '+' : '';
   return (
-    <MarketCell title={`讓分 主隊 ${sign}${market.line}`}>
+    <MarketCell title={`讓分盤 主 ${sign}${market.line}`}>
       <TwoCol
         leftLabel="主"
         left={market.homeOdds}
@@ -253,7 +254,7 @@ function TotalGoalsCell({
   market: NonNullable<NonNullable<Odds['markets']>['totalGoals']>;
 }) {
   return (
-    <MarketCell title="進球數區間">
+    <MarketCell title="總進球數">
       <div className="grid grid-cols-4 gap-0.5 font-mono text-[10px]">
         {market.brackets.map((b) => (
           <span
