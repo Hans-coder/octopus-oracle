@@ -1,6 +1,6 @@
 # 🐙 章魚哥神諭 · Octopus Oracle
 
-> 致敬 Paul the Octopus！為 2026 FIFA 世界杯每場比賽提供深海神諭預測，**零設定 / 無需 API key** 即可運作。
+> 以資料模型為核心，為 2026 FIFA 世界杯提供可追蹤的勝負預測與賠率推算。
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
@@ -19,7 +19,7 @@
   - 總進球數
   - 波膽 Top 6
 - 🏆 **神準排行**：累計章魚哥的歷史準確率
-- 🎨 **海洋風 UI**：深海漸層 + 氣泡動畫 + Framer Motion 觸手揭曉動畫
+- 📱 **Mobile-first UI**：資訊優先、低干擾、手機可讀版面
 
 ## 🚀 快速開始
 
@@ -29,7 +29,7 @@ npm run dev
 ```
 
 打開 [http://localhost:3000](http://localhost:3000) 🎉
-**完全不需要設定任何 API key**，賽程從 ESPN 拉、賠率由章魚推算。
+若要啟用 AI 分析，需設定 OpenAI 或 Anthropic API key；未設定時會停用 AI 分析。
 
 ## 🌐 資料來源
 
@@ -37,7 +37,7 @@ npm run dev
 | --- | --- | --- |
 | **賽程 / 比分 / 場地** | ESPN 隱藏公開 API (`site.api.espn.com`) | ❌ 完全不用 |
 | **賠率（多玩法）** | 章魚推算盤（後端 Poisson xG 模型，見 `lib/markets.ts`） | ❌ 後端純算 |
-| **AI 神諭文案** | 本機模板（8 種隨機句型）；可選擇接 OpenAI / Anthropic | ⚠️ 選填 |
+| **AI 分析** | OpenAI / Anthropic（未設定 key 時停用） | ⚠️ 選填 |
 
 > ⚠️ **為什麼不接台彩真實賠率？**
 > 台灣運彩沒有開放 API，官網是 SPA + Cloudflare 擋爬蟲，技術上拿不到。
@@ -45,7 +45,7 @@ npm run dev
 
 ## ⚙️ 選填：啟用真實 LLM 神諭
 
-預設用本機模板就很好玩了；如果想要每場都有獨特 AI 分析：
+若要啟用每場比賽的 AI 分析：
 
 ```bash
 cp .env.local.example .env.local
@@ -71,7 +71,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 | --- | --- |
 | 框架 | Next.js 16 App Router + React 19 |
 | 樣式 | Tailwind CSS v4 |
-| 動畫 | Framer Motion |
+| 快取 | In-memory + Upstash Redis（選填） |
 | Icons | Lucide React |
 | 數學模型 | Poisson xG + Elo 評分 |
 | 部署 | Vercel（含 ISR `revalidate: 300`） |
@@ -98,15 +98,15 @@ src/
 │   └── StatCard.tsx
 └── lib/
     ├── espn-api.ts                    # ESPN 公開 API 整合
-    ├── football-api.ts                # 賽程入口（呼叫 espn-api，失敗 fallback mock）
+    ├── football-api.ts                # 賽程入口（呼叫 espn-api，失敗回傳空資料）
     ├── lottery-scraper.ts             # 章魚推算盤入口（呼叫 markets.ts）
     ├── markets.ts                     # Poisson xG 多玩法機率模型
     ├── elo.ts                         # 球隊 Elo 評分表
     ├── octopus.ts                     # 章魚哥預測引擎
     ├── team-stats.ts                  # 近期戰績 / H2H / 傷兵推算
-    ├── llm-analyst.ts                 # LLM provider 整合（mock / openai / anthropic）
+    ├── llm-analyst.ts                 # LLM provider 整合（openai / anthropic）
     ├── page-data.ts                   # 三個 page 共用的 server 資料聚合
-    └── mock-data.ts                   # ESPN 掛掉時的 fallback 賽程
+    └── redis.ts                       # Redis client（分散式快取）
 ```
 
 ## 🐙 章魚哥預測演算法
@@ -131,8 +131,9 @@ P(home/draw/away) = odds 隱含機率 × 0.55
 
 1. Push 到 GitHub
 2. 在 [Vercel](https://vercel.com) 匯入專案
-3. 直接 Deploy（**不需要設任何環境變數**）
-4. 想用真實 LLM 才設 `LLM_PROVIDER` + `*_API_KEY`
+3. 直接 Deploy
+4. 若要 AI 分析，設定 `LLM_PROVIDER` + `*_API_KEY`
+5. 建議設定 `UPSTASH_REDIS_REST_URL` 與 `UPSTASH_REDIS_REST_TOKEN` 以避免重複運算
 
 ## ⚠️ 免責聲明
 

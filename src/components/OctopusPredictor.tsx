@@ -432,7 +432,7 @@ function RevealedState({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          “{prediction.reasoning}”
+          &ldquo;{prediction.reasoning}&rdquo;
         </motion.p>
       )}
 
@@ -443,9 +443,7 @@ function RevealedState({
 
       {prediction.source && (
         <p className="mt-2 text-[10px] text-slate-500">
-          {prediction.source === 'mock'
-            ? '⚙️ 目前以本地分析運作（未設定 LLM API key）'
-            : `🤖 由 ${prediction.source} 即時生成`}
+          🤖 由 {prediction.source} 即時生成
         </p>
       )}
     </motion.div>
@@ -453,7 +451,7 @@ function RevealedState({
 }
 
 /* ────────────────────────────────────────────────── */
-/*  多玩法神諭 — 大小分 / 雙方均得分 / 上半場 / 總進球數 / 波膽  */
+/*  多玩法神諭                                        */
 /* ────────────────────────────────────────────────── */
 function ExtrasStrip({
   extras,
@@ -499,9 +497,7 @@ function ExtrasStrip({
       icon: extras.btts.pick === 'YES' ? '⚽' : '🛡️',
       label: '雙方均得分',
       value: extras.btts.pick === 'YES' ? '是' : '否',
-      title:
-        extras.btts.reasoning ??
-        `雙方均得分：${extras.btts.pick === 'YES' ? '是' : '否'}`,
+      title: extras.btts.reasoning ?? `雙方均得分：${extras.btts.pick === 'YES' ? '是' : '否'}`,
       confidence: extras.btts.confidence,
     });
   }
@@ -527,9 +523,7 @@ function ExtrasStrip({
       icon: '🔢',
       label: '總進球數',
       value: extras.totalGoals.label,
-      title:
-        extras.totalGoals.reasoning ??
-        `總進球落點：${extras.totalGoals.label}`,
+      title: extras.totalGoals.reasoning ?? `總進球落點：${extras.totalGoals.label}`,
       confidence: extras.totalGoals.confidence,
     });
   }
@@ -540,9 +534,7 @@ function ExtrasStrip({
       icon: '⚖️',
       label: `讓分盤 ${sign}${extras.handicap.line}`,
       value: extras.handicap.pick === 'HOME' ? '主' : '客',
-      title:
-        extras.handicap.reasoning ??
-        `讓分盤 ${sign}${extras.handicap.line}：${extras.handicap.pick === 'HOME' ? '主' : '客'}`,
+      title: extras.handicap.reasoning ?? `讓分盤 ${sign}${extras.handicap.line}：${extras.handicap.pick === 'HOME' ? '主' : '客'}`,
       confidence: extras.handicap.confidence,
     });
   }

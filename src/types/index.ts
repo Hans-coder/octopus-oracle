@@ -167,7 +167,7 @@ export interface LLMAnalysis {
   keyFactors: string[];
   /** 章魚神諭官的詩意預告，1-2 句 */
   narrative: string;
-  provider: 'openai' | 'anthropic' | 'mock';
+  provider: 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
   generatedAt: string;
 }
 
@@ -198,7 +198,7 @@ export interface Prediction {
   pickedTeamName: string;   // 顯示用
   pickedTeamFlag: string;
   /** LLM provider 標籤（有設 API key 時會帶） */
-  source?: 'mock' | 'openai' | 'anthropic';
+  source?: 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
   /** 多玩法神諭（大小分 / 雙方均得分 / 上半場 / 波膽 / 總進球數 / 讓分盤） */
   extras?: MultiMarketPicks;
 }
@@ -256,10 +256,19 @@ export interface PredictionResult {
   correct: boolean | null;
 }
 
-/** 章魚哥的累積準確率 */
+/** 模型校準品質指標 */
+export interface CalibratedMetrics {
+  /** Brier Score: (1/n) * Σ(prob_predicted - actual)²，範圍 0-1，越小越好 */
+  brierScore: number;
+  /** Log Loss: -1/n * Σ[y*log(p) + (1-y)*log(1-p)]，範圍 0-∞，越小越好 */
+  logLoss: number;
+}
+
+/** 章魚哥的累積準確率 + 校準指標 */
 export interface AccuracyBucket {
   total: number;
   evaluated: number;
   correct: number;
   accuracy: number;
+  calibration?: CalibratedMetrics;
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { Clock, MapPin, CheckCircle2, XCircle, Trophy } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, MapPin, CheckCircle2, XCircle, Trophy, Heart } from 'lucide-react';
 import type { Match, Odds, Prediction } from '@/types';
 import { cn, formatTaiwanTime, statusToChinese } from '@/lib/utils';
 import { useRevealed } from '@/lib/use-revealed';
@@ -18,6 +19,7 @@ export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
   const isFinished = match.status === 'FINISHED';
   const isLive = match.status === 'LIVE' || match.status === 'IN_PLAY';
   const winner = match.score?.winner;
+  const [likes, setLikes] = useState(0);
 
   const autoReveal = isFinished || isLive;
   const { revealed, hydrated, markRevealed } = useRevealed(match.id, autoReveal);
@@ -163,12 +165,29 @@ export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
           actual={actual}
         />
       )}
+
+      {/* 打賞按鈕 */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setLikes((p) => p + 1)}
+          className={cn(
+            'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold',
+            'border border-pink-500/30 bg-pink-900/10 text-pink-400',
+            'transition-all hover:bg-pink-900/30 hover:border-pink-400/60 active:scale-95',
+            likes > 0 && 'border-pink-400/50 bg-pink-900/20',
+          )}
+          title="打賞章魚哥"
+        >
+          <Heart className={cn('h-3.5 w-3.5', likes > 0 && 'fill-pink-400')} />
+          <span>{likes > 0 ? `${likes} 個打賞` : '打賞'}</span>
+        </button>
+      </div>
     </article>
   );
 }
 
 /* ────────────────────────────────────────────────────────── */
-/*  PredictionVerdict — 賽後章魚哥對錯總結                   */
+/*  PredictionVerdict                                         */
 /* ────────────────────────────────────────────────────────── */
 function PredictionVerdict({
   prediction,
@@ -242,9 +261,7 @@ function TeamBlock({
       className={cn(
         'flex items-center gap-2 rounded-xl px-1 py-1 transition',
         align === 'right' ? 'flex-row-reverse text-right' : 'text-left',
-        isFinished &&
-          isWinner &&
-          'bg-amber-400/10 ring-1 ring-amber-400/30',
+        isFinished && isWinner && 'bg-amber-400/10 ring-1 ring-amber-400/30',
       )}
     >
       <span className="text-3xl drop-shadow-md sm:text-4xl">{flag}</span>

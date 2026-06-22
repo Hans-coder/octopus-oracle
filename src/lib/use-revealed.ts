@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 const STORAGE_KEY = 'octopus-revealed-v1';
 
@@ -50,13 +50,21 @@ function getServerSnapshot() {
 /**
  * 章魚哥神諭揭曉狀態管理（React 19 / Next.js 16 SSR-safe）
  *
- * 使用 useSyncExternalStore 直接訂閱 localStorage，
- * 避免 useEffect + setState 造成 cascading render。
+ * hydrated 透過 useEffect 在 mount 後才設為 true，
+ * 確保 server render 與 client 第一次 render 完全一致，
+ * 避免 React hydration mismatch。
  *
  * @param matchId 比賽 ID
  * @param autoReveal 為 true 時強制揭曉（用於已結束 / 進行中的比賽）
  */
 export function useRevealed(matchId: string, autoReveal = false) {
+  const [hydrated, setHydrated] = useState(false);
+
+  // mount 後才切換 hydrated，確保 SSR 與首次 client render 一致
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   const snapshot = useSyncExternalStore(
     subscribe,
     getSnapshot,
@@ -71,9 +79,7 @@ export function useRevealed(matchId: string, autoReveal = false) {
     }
   }, [snapshot]);
 
-  // SSR snapshot 永遠是 '[]' → revealed=false（不論 autoReveal）
-  // client hydrate 後拿到真實 snapshot → 若 autoReveal 或已 reveal 則 true
-  const hydrated = snapshot !== '[]' || (typeof window !== 'undefined' && snapshot === '[]');
+  // hydrated 為 false 時 revealed 永遠是 false（server & client 第一次 render 一致）
   const revealed = hydrated && (autoReveal || set.has(matchId));
 
   const markRevealed = useCallback(() => {

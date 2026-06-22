@@ -11,6 +11,7 @@ import type {
   PredictionPick,
   PredictionResult,
   ProbabilityTriple,
+  CalibratedMetrics,
 } from '@/types';
 import {
   btts as bttsModel,
@@ -309,7 +310,7 @@ function paulReasoning(seed: number, teamName: string, isDraw: boolean) {
  *   - 無 LLM：賠率 55% + Elo 30% + 近期狀態 15%
  *
  * 神諭文字：
- *   - 有真實 LLM (openai/anthropic)：用 LLM 的 narrative
+ *   - 有 LLM：用 LLM narrative
  *   - 否則：8 句模板隨機抽
  */
 export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
@@ -354,13 +355,12 @@ export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
   }
 
   let reasoning: string;
-  let source: 'mock' | 'openai' | 'anthropic' | undefined;
-  if (ctx.llm && ctx.llm.provider !== 'mock' && ctx.llm.narrative) {
+  let source: 'openai' | 'anthropic' | undefined;
+  if (ctx.llm?.narrative) {
     reasoning = ctx.llm.narrative;
     source = ctx.llm.provider;
   } else {
     reasoning = paulReasoning(seed, pickedTeamName, isDraw);
-    if (ctx.llm) source = 'mock';
   }
 
   return {
@@ -420,7 +420,54 @@ export function evaluatePrediction(
   };
 }
 
-/** 計算章魚哥的累積命中率（只算非熱身賽） */
+/** 計算 Brier Score
+ * 多分類：針對每個類別計算 (prob - actual)²，然後平均
+ * 範圍 0-1，越小越好
+ */
+function computeBrierScore(
+  results: PredictionResult[],
+): number {
+  if (results.length === 0) return 0;
+  let sum = 0;
+  for (const r of results) {
+    if (r.actual === null) continue;
+    // 將實際結果轉成 0/1 標籤
+    const actual = r.actual === 'HOME' ? 1 : r.actual === 'AWAY' ? 1 : 0;
+    const pick = r.prediction.pick;
+    const pickProb =
+      pick === 'HOME'
+        ? r.prediction.probs.home
+        : pick === 'AWAY'
+          ? r.prediction.probs.away
+          : r.prediction.probs.draw;
+    sum += Math.pow(pickProb - (actual === 1 ? 1 : 0), 2);
+  }
+  return sum / results.length;
+}
+
+/** 計算 Log Loss
+ * 範圍 0-∞，越小越好
+ * 針對預測的正確類別取其概率的負對數
+ */
+function computeLogLoss(results: PredictionResult[]): number {
+  if (results.length === 0) return 0;
+  const epsilon = 1e-15; // 避免 log(0)
+  let sum = 0;
+  for (const r of results) {
+    if (r.actual === null) continue;
+    const pickProb =
+      r.actual === 'HOME'
+        ? r.prediction.probs.home
+        : r.actual === 'AWAY'
+          ? r.prediction.probs.away
+          : r.prediction.probs.draw;
+    const clipped = Math.max(epsilon, Math.min(1 - epsilon, pickProb));
+    sum += -Math.log(clipped);
+  }
+  return sum / results.length;
+}
+
+/** 計算校準指標與校準指標 */
 export function calculateAccuracy(
   predictions: Map<string, Prediction>,
   matches: Match[],
@@ -434,10 +481,20 @@ export function calculateAccuracy(
   }
   const evaluated = results.filter((r) => r.correct !== null);
   const correct = evaluated.filter((r) => r.correct === true).length;
+
+  const calibration: CalibratedMetrics | undefined =
+    evaluated.length > 0
+      ? {
+          brierScore: computeBrierScore(evaluated),
+          logLoss: computeLogLoss(evaluated),
+        }
+      : undefined;
+
   return {
     total: results.length,
     evaluated: evaluated.length,
     correct,
     accuracy: evaluated.length === 0 ? 0 : correct / evaluated.length,
+    calibration,
   };
 }

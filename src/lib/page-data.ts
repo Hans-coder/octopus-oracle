@@ -20,7 +20,7 @@ export interface AggregatedData {
   llmMap: Map<string, LLMAnalysis>;
   predictions: Map<string, Prediction>;
   accuracy: AccuracyBucket;
-  llmProvider: 'mock' | 'openai' | 'anthropic';
+  llmProvider: 'disabled' | 'openai' | 'anthropic';
 }
 
 /**
@@ -31,9 +31,11 @@ export interface AggregatedData {
  */
 export async function getAggregatedData(): Promise<AggregatedData> {
   const matches = await getMatches();
-  const odds = await getOddsForMatches(matches);
+  const [odds, statsMap] = await Promise.all([
+    getOddsForMatches(matches),
+    Promise.resolve(getMatchStatsMap(matches)),
+  ]);
   const oddsMap = oddsToMap(odds);
-  const statsMap = getMatchStatsMap(matches);
   const llmMap = await getLLMAnalysisMap(matches, oddsMap, statsMap);
   const predictions = predictAll(matches, oddsMap, statsMap, llmMap);
   const accuracy = calculateAccuracy(predictions, matches);

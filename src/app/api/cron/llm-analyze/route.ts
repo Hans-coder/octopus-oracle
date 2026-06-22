@@ -18,7 +18,7 @@ import { isPast } from '@/lib/utils';
  *
  * 安全性：必須附上 Authorization: Bearer <CRON_SECRET>
  *
- * provider=mock 時依然會跑（無 cost），確保程式碼路徑健全
+ * 若未設定 LLM provider（disabled），會回傳 analyzed=0，不進行 AI 呼叫
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -57,10 +57,13 @@ export async function GET(request: Request) {
     revalidatePath('/matches');
     revalidatePath('/leaderboard');
 
+    const provider = debugCurrentProvider();
+
     return NextResponse.json({
       ok: true,
-      message: 'LLM 神諭已預先暖機',
-      provider: debugCurrentProvider(),
+      message:
+        provider === 'disabled' ? 'LLM provider 未啟用，略過 AI 暖機' : 'LLM 神諭已預先暖機',
+      provider,
       analyzed: llmMap.size,
       candidates: upcoming.length,
       timestamp: new Date().toISOString(),

@@ -14,21 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '章魚哥神諭 · 2026 世界杯預測 🐙',
+  title: 'Octopus Oracle | 2026 World Cup Predictions',
   description:
-    '致敬章魚保羅！透過深海神諭預測 2026 FIFA 世界杯每場賽事，涵蓋台彩主要玩法（不讓分 / 大小分 / 讓分盤 / 雙方均得分 / 波膽），純娛樂用途。',
-  keywords: ['世界杯', 'World Cup 2026', '章魚哥', '足球預測', '台彩', '賠率'],
+    'World Cup 2026 prediction dashboard built with odds model, Elo signals, and optional LLM analysis.',
+  keywords: ['World Cup', 'football prediction', 'odds model', 'Elo'],
   openGraph: {
-    title: '章魚哥神諭 🐙',
-    description: '深海預言家為 2026 世界杯每場比賽指引方向',
+    title: 'Octopus Oracle',
+    description: 'World Cup prediction dashboard',
     type: 'website',
-  },
-  icons: {
-    icon: [
-      {
-        url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E🐙%3C/text%3E%3C/svg%3E',
-      },
-    ],
   },
 };
 
@@ -43,13 +36,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Navigation />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-white/5 py-6 text-center text-xs text-slate-500">
-          <p>
-            ⚠️ 本站僅供娛樂用途・賠率為「章魚推算盤」並非台彩實時資料・未滿 18 歲請勿購買運彩
-          </p>
-          <p className="mt-1">
-            🐙 致敬 Paul the Octopus (2008–2010) ・ 賽程資料：ESPN 公開 API
-          </p>
+        <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-500">
+          <p>Prediction outputs are for product demonstration and entertainment use.</p>
+          <p className="mt-1">Data source: ESPN public scoreboard endpoint. Odds are internally modeled.</p>
         </footer>
       </body>
     </html>

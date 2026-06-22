@@ -5,14 +5,14 @@ interface StatCardProps {
   label: string;
   value: string | number;
   hint?: string;
-  accent?: 'cyan' | 'amber' | 'emerald' | 'rose';
+  accent?: 'cyan' | 'emerald' | 'blue' | 'purple';
 }
 
-const accentMap = {
-  cyan: 'from-cyan-500/20 to-cyan-500/0 text-cyan-300',
-  amber: 'from-amber-500/20 to-amber-500/0 text-amber-300',
-  emerald: 'from-emerald-500/20 to-emerald-500/0 text-emerald-300',
-  rose: 'from-rose-500/20 to-rose-500/0 text-rose-300',
+const ACCENT_STYLE: Record<NonNullable<StatCardProps['accent']>, string> = {
+  cyan: 'border-cyan-500/50 bg-cyan-900/20 text-cyan-300',
+  emerald: 'border-emerald-500/50 bg-emerald-900/20 text-emerald-300',
+  blue: 'border-blue-500/50 bg-blue-900/20 text-blue-300',
+  purple: 'border-purple-500/50 bg-purple-900/20 text-purple-300',
 };
 
 export default function StatCard({
@@ -23,26 +23,20 @@ export default function StatCard({
   accent = 'cyan',
 }: StatCardProps) {
   return (
-    <div
+    <article
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br p-4',
-        accentMap[accent],
+        'rounded-2xl border-2 p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 backdrop-blur',
+        ACCENT_STYLE[accent],
       )}
     >
-      <div className="relative z-10 flex items-start justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-slate-300">
-            {label}
-          </div>
-          <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-white sm:text-3xl">
-            {value}
-          </div>
-          {hint && (
-            <div className="mt-1 text-[11px] text-slate-400">{hint}</div>
-          )}
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-xs font-bold uppercase tracking-widest opacity-75">{label}</p>
+          <p className="mt-2 text-3xl font-bold tabular-nums">{value}</p>
         </div>
-        <span className="text-3xl drop-shadow-md">{icon}</span>
+        <span className="text-2xl">{icon}</span>
       </div>
-    </div>
+      {hint && <p className="mt-2 text-xs opacity-70 leading-snug">{hint}</p>}
+    </article>
   );
 }
