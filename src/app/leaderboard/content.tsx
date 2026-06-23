@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { MinusCircle, TrendingUp, Heart, CheckCircle2, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCircle2, Heart, MinusCircle, TrendingUp, XCircle } from 'lucide-react';
 import { cn, formatTaiwanTime } from '@/lib/utils';
-import type { Match, Prediction } from '@/types';
 
 interface LeaderboardContentProps {
-  matches: Match[];
-  predictions: Map<string, Prediction>;
   accuracy: {
     total: number;
     evaluated: number;
@@ -23,16 +20,11 @@ interface LeaderboardContentProps {
 }
 
 export function LeaderboardContent({
-  matches,
-  predictions,
   accuracy,
   engineName,
   minEvaluated,
 }: LeaderboardContentProps) {
   const hasEnough = accuracy.evaluated >= minEvaluated;
-  const finishedMatches = matches
-    .filter((m) => m.status === 'FINISHED' && m.score?.winner && !m.isFriendly)
-    .sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime());
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -117,73 +109,136 @@ export function LeaderboardContent({
         <h2 className="mb-4 text-xl font-bold text-cyan-300 flex items-center gap-2">
           <span>📋</span> 預測紀錄
         </h2>
-        {finishedMatches.length === 0 ? (
-          <div className="rounded-2xl border border-slate-600 bg-slate-800 p-8 text-center">
-            <p className="text-4xl mb-2">⚽</p>
-            <p className="text-sm text-slate-400">尚無可評估賽果。</p>
-          </div>
-        ) : (
-          <PredictionList matches={finishedMatches} predictions={predictions} />
-        )}
+        <LeaderboardPredictionRecords />
       </section>
     </div>
   );
 }
 
-function PredictionList({
-  matches,
-  predictions,
-}: {
-  matches: Match[];
-  predictions: Map<string, Prediction>;
-}) {
+interface LeaderboardRecord {
+  matchId: string;
+  pickedTeam: string;
+  pickedTeamFlag: string;
+  picked: string;
+  actual: string;
+  correct: boolean | null;
+  confidence: number;
+  evaluatedAt: string;
+  match: {
+    utcDate: string | null;
+    homeName: string | null;
+    awayName: string | null;
+    homeFlag: string | null;
+    awayFlag: string | null;
+    homeScore: number | null;
+    awayScore: number | null;
+  };
+}
+
+const RECORDS_PAGE_SIZE = 20;
+
+function LeaderboardPredictionRecords() {
+  const [records, setRecords] = useState<LeaderboardRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(RECORDS_PAGE_SIZE);
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        const res = await fetch('/api/accuracy-records?limit=200&offset=0');
+        if (!res.ok) throw new Error('無法取得預測紀錄');
+
+        const json = await res.json();
+        setRecords(Array.isArray(json.records) ? json.records : []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '讀取失敗');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecords();
+  }, []);
+
+  if (loading) {
+    return <div className="rounded-2xl border border-slate-700 bg-slate-900/40 p-6 text-center text-slate-400">載入預測紀錄中...</div>;
+  }
+
+  if (error) {
+    return <div className="rounded-2xl border border-rose-500/40 bg-rose-900/20 p-6 text-center text-rose-300">{error}</div>;
+  }
+
+  if (records.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-600 bg-slate-800 p-8 text-center">
+        <p className="text-4xl mb-2">⚽</p>
+        <p className="text-sm text-slate-400">尚無可評估賽果。</p>
+      </div>
+    );
+  }
+
+  const visibleRecords = records.slice(0, visibleCount);
+  const hasMore = visibleCount < records.length;
+
   return (
-    <ul className="space-y-2">
-      {matches.map((m) => {
-        const prediction = predictions.get(m.id);
-        if (!prediction) return null;
-        return <PredictionRow key={m.id} match={m} prediction={prediction} />;
-      })}
-    </ul>
+    <div className="space-y-3">
+      <ul className="space-y-2">
+        {visibleRecords.map((record) => (
+          <PredictionRecordRow key={record.matchId} record={record} />
+        ))}
+      </ul>
+
+      <div className="flex items-center justify-between text-xs text-slate-400">
+        <p>已顯示 {visibleRecords.length} / {records.length} 筆</p>
+        {hasMore ? (
+          <button
+            onClick={() => setVisibleCount((prev) => prev + RECORDS_PAGE_SIZE)}
+            className="rounded-lg border border-cyan-500/40 px-3 py-1.5 font-medium text-cyan-300 transition hover:border-cyan-400 hover:text-cyan-200"
+          >
+            載入更多
+          </button>
+        ) : (
+          <span>已顯示全部</span>
+        )}
+      </div>
+    </div>
   );
 }
 
-function PredictionRow({
-  match,
-  prediction,
-}: {
-  match: Match;
-  prediction: Prediction;
-}) {
-  const correct = evaluatePrediction(prediction, match);
-  const isDrawResult = match.score?.winner === 'DRAW';
+function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
   const [likes, setLikes] = useState(0);
+  const isDrawResult = record.actual === 'DRAW';
+  const displayDate = record.match.utcDate ?? record.evaluatedAt;
+  const hasScore =
+    typeof record.match.homeScore === 'number' &&
+    typeof record.match.awayScore === 'number';
 
   return (
     <li
       className={cn(
         'rounded-2xl border-2 px-4 py-3 transition-all hover:shadow-lg backdrop-blur',
-        correct
+        record.correct === true
           ? 'border-emerald-500/50 bg-emerald-900/20'
-          : 'border-rose-500/50 bg-rose-900/20',
+          : record.correct === false
+            ? 'border-rose-500/50 bg-rose-900/20'
+            : 'border-slate-600 bg-slate-800/40',
       )}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1">
-          {/* 比賽資訊 */}
           <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-slate-100">
-            <span className="text-lg">{match.homeTeam.flag}</span>
-            <span className="truncate">{match.homeTeam.name}</span>
+            <span className="text-lg">{record.match.homeFlag ?? '🏳️'}</span>
+            <span className="truncate">{record.match.homeName ?? '主隊'}</span>
             <span className="font-mono text-cyan-400 bg-slate-700/50 rounded px-2 py-1">
-              {match.score?.fullTime.home}-{match.score?.fullTime.away}
+              {hasScore ? `${record.match.homeScore}-${record.match.awayScore}` : 'FT'}
             </span>
-            <span className="truncate">{match.awayTeam.name}</span>
-            <span className="text-lg">{match.awayTeam.flag}</span>
+            <span className="truncate">{record.match.awayName ?? '客隊'}</span>
+            <span className="text-lg">{record.match.awayFlag ?? '🏳️'}</span>
           </div>
 
-          {/* 時間和和局標籤 */}
           <div className="mt-2 flex items-center gap-3 text-xs text-slate-400">
-            <span>{formatTaiwanTime(match.utcDate)}</span>
+            <span>{formatTaiwanTime(displayDate)}</span>
             {isDrawResult && (
               <span className="inline-flex items-center gap-1 bg-slate-700/50 px-2 py-1 rounded-full border border-slate-600">
                 <MinusCircle className="h-3 w-3" /> 和局
@@ -192,20 +247,19 @@ function PredictionRow({
           </div>
         </div>
 
-        {/* 預測結果和互動 */}
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="rounded-xl bg-slate-700/50 px-3 py-2 border border-cyan-500/50 flex items-center gap-2">
             <span className="text-sm font-semibold text-slate-100">
-              {prediction.pickedTeamFlag} {prediction.pickedTeamName}
+              {record.pickedTeamFlag} {record.pickedTeam}
             </span>
-            {correct ? (
+            {record.correct === true ? (
               <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-            ) : (
+            ) : record.correct === false ? (
               <XCircle className="h-4 w-4 text-rose-400" />
-            )}
+            ) : null}
           </div>
           <span className="text-xs font-semibold text-cyan-400 w-12 text-right">
-            {Math.round(prediction.confidence * 100)}%
+            {record.confidence}%
           </span>
           <button
             onClick={() => setLikes((prev) => prev + 1)}
@@ -225,17 +279,5 @@ function PredictionRow({
         </div>
       </div>
     </li>
-  );
-}
-
-function evaluatePrediction(prediction: Prediction, match: Match): boolean {
-  if (!match.score?.winner) {
-    return false;
-  }
-
-  return (
-    (prediction.pick === 'HOME' && match.score.winner === 'HOME_TEAM') ||
-    (prediction.pick === 'AWAY' && match.score.winner === 'AWAY_TEAM') ||
-    (prediction.pick === 'DRAW' && match.score.winner === 'DRAW')
   );
 }
