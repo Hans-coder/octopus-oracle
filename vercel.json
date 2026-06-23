@@ -6,11 +6,11 @@
   "crons": [
     {
       "path": "/api/cron/update-odds",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 1 * * *"
     },
     {
       "path": "/api/cron/llm-analyze",
-      "schedule": "*/30 * * * *"
+      "schedule": "30 1 * * *"
     }
   ]
 }
