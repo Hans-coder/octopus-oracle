@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Octopus Oracle | 2026 World Cup Predictions',
+  title: 'Octopus Oracle | 2026 FIFA 世界盃預測',
   description:
-    'World Cup 2026 prediction dashboard built with odds model, Elo signals, and optional LLM analysis.',
-  keywords: ['World Cup', 'football prediction', 'odds model', 'Elo'],
+    'AI 驅動的 2026 FIFA 世界盃預測，結合賠率模型、Elo 評分與章魚哥智能引擎。',
+  keywords: ['世界盃', '足球預測', '賠率', 'Elo'],
   openGraph: {
     title: 'Octopus Oracle',
-    description: 'World Cup prediction dashboard',
+    description: '2026 FIFA 世界盃預測儀表板',
     type: 'website',
   },
 };
@@ -36,9 +36,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Navigation />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-500">
-          <p>Prediction outputs are for product demonstration and entertainment use.</p>
-          <p className="mt-1">Data source: ESPN public scoreboard endpoint. Odds are internally modeled.</p>
+        <footer className="border-t border-slate-700/40 bg-slate-900/30 py-4 px-4 text-center text-xs text-slate-400">
+          <p className="mb-1.5">⚠️ <strong>免責聲明：</strong>預測結果僅供娛樂參考，非投資建議。</p>
+          <p className="mb-1">📊 盤口來源：ESPN 美國實時賠率（非台灣運彩官方數據）</p>
+          <p>❌ 不應用於真實投注決策，請參考官方賠率。</p>
         </footer>
       </body>
     </html>

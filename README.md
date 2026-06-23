@@ -36,7 +36,7 @@ npm run dev
 | 層 | 來源 | 需要 key? |
 | --- | --- | --- |
 | **賽程 / 比分 / 場地** | ESPN 隱藏公開 API (`site.api.espn.com`) | ❌ 完全不用 |
-| **賠率（多玩法）** | 章魚推算盤（後端 Poisson xG 模型，見 `lib/markets.ts`） | ❌ 後端純算 |
+| **盤口（多玩法）** | 章魚推算盤（後端 Poisson xG 模型，見 `lib/markets.ts`） | ❌ 後端純算 |
 | **AI 分析** | OpenAI / Anthropic（未設定 key 時停用） | ⚠️ 選填 |
 
 > ⚠️ **為什麼不接台彩真實賠率？**
@@ -120,11 +120,11 @@ P(home/draw/away) = odds 隱含機率 × 0.55
                   (+ LLM 機率 × 0.10 if available)
 ```
 
-衍生玩法（大小分 / 讓分盤 / BTTS / ...）用 Poisson xG：
+衍生玩法（大小 / 讓分 / 客進 / ...）用 Poisson xG：
 
 1. 從 Elo 差推算 λ_home, λ_away（預期進球）
 2. 雙重 Poisson sum 算各種市場機率
-3. 章魚哥對 OVER / BTTS=YES 略有偏好（+3% 戲劇性）
+3. 章魚哥對大球 / 客進=YES 略有偏好（+3% 戲劇性）
 4. 種子化 seeded random 確保同場永遠相同預測
 
 ## 🚢 部署到 Vercel

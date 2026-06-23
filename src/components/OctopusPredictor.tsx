@@ -16,6 +16,7 @@ import type {
   PredictionPick,
 } from '@/types';
 import { cn } from '@/lib/utils';
+import { seededRandom, stringToSeed } from '@/lib/utils';
 
 interface OctopusPredictorProps {
   prediction: Prediction;
@@ -438,7 +439,11 @@ function RevealedState({
 
       {/* 多玩法神諭 */}
       {prediction.extras && (
-        <ExtrasStrip extras={prediction.extras} dimmed={isCorrect === false} />
+        <ExtrasStrip 
+          extras={prediction.extras} 
+          matchId={prediction.matchId}
+          dimmed={isCorrect === false} 
+        />
       )}
 
       {prediction.source && (
@@ -455,9 +460,11 @@ function RevealedState({
 /* ────────────────────────────────────────────────── */
 function ExtrasStrip({
   extras,
+  matchId,
   dimmed,
 }: {
   extras: MultiMarketPicks;
+  matchId: string;
   dimmed?: boolean;
 }) {
   const pills: Array<{
@@ -474,9 +481,9 @@ function ExtrasStrip({
     pills.push({
       key: 'cs',
       icon: '🎯',
-      label: '波膽',
+      label: '正確比數',
       value: `${cs.home}-${cs.away}`,
-      title: cs.reasoning ?? `波膽 ${cs.home}-${cs.away}`,
+      title: cs.reasoning ?? `正確比數 ${cs.home}-${cs.away}`,
       confidence: cs.confidence,
     });
   }
@@ -540,6 +547,11 @@ function ExtrasStrip({
   }
 
   if (pills.length === 0) return null;
+
+  // 用 matchId 作為種子，打亂 pills 順序（同場比賽每次都一樣）
+  const seed = stringToSeed(`extras-order-${matchId}`);
+  const rng = seededRandom(seed);
+  pills.sort(() => rng() - 0.5);
 
   return (
     <motion.div

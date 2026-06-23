@@ -60,21 +60,21 @@ export interface Odds {
   updatedAt: string; // ISO timestamp
 }
 
-/** 大小分（總進球 over/under line） */
+/** 大小（總進球 over/under line） */
 export interface OverUnderMarket {
   line: number;       // 通常 2.5
   overOdds: number;
   underOdds: number;
 }
 
-/** 亞洲讓分（讓主隊 line，正值代表主隊讓分） */
+/** 讓分盤（讓主隊 line，正值代表主隊讓分） */
 export interface HandicapMarket {
   line: number;       // e.g. -0.5 表示主隊讓 0.5；+0.5 表示主隊被讓 0.5
   homeOdds: number;
   awayOdds: number;
 }
 
-/** BTTS — 雙方都進球 */
+/** 客進（雙方都進球） */
 export interface BTTSMarket {
   yesOdds: number;
   noOdds: number;
@@ -92,7 +92,7 @@ export interface CorrectScoreMarket {
   scores: Array<{ home: number; away: number; odds: number }>;
 }
 
-/** 進球數區間 */
+/** 總進球（進球數區間） */
 export interface TotalGoalsMarket {
   brackets: Array<{ label: string; min: number; max: number | null; odds: number }>;
 }
@@ -199,7 +199,7 @@ export interface Prediction {
   pickedTeamFlag: string;
   /** LLM provider 標籤（有設 API key 時會帶） */
   source?: 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
-  /** 多玩法神諭（大小分 / 雙方均得分 / 上半場 / 波膽 / 總進球數 / 讓分盤） */
+  /** 章魚多玩法（大小 / 客進 / 上半場 / 波膽 / 總進球 / 讓分盤） */
   extras?: MultiMarketPicks;
 }
 
@@ -209,21 +209,21 @@ export interface Prediction {
  * - 全部都是 optional，UI 沒拿到就不顯示
  */
 export interface MultiMarketPicks {
-  /** 大小球 (over/under line) */
+  /** 大小（over/under 線） */
   overUnder?: {
     pick: 'OVER' | 'UNDER';
     line: number;
     confidence: number;
     reasoning?: string;
   };
-  /** 亞洲讓分 */
+  /** 讓分盤 */
   handicap?: {
     pick: 'HOME' | 'AWAY';
     line: number;          // 主隊 handicap
     confidence: number;
     reasoning?: string;
   };
-  /** 雙方都進球 */
+  /** 客進（雙方都進球） */
   btts?: {
     pick: 'YES' | 'NO';
     confidence: number;

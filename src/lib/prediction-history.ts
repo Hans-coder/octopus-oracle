@@ -1,0 +1,83 @@
+import type { Match, Prediction } from '@/types';
+import { getRedisClient } from './redis';
+
+interface StoredPredictionSnapshot {
+  matchId: string;
+  prediction: Prediction;
+  createdAt: string;
+  kickoffAt: string;
+}
+
+function historyKey(matchId: string): string {
+  return `pred:history:v1:${matchId}`;
+}
+
+function isValidPrediction(input: unknown): input is Prediction {
+  if (!input || typeof input !== 'object') return false;
+  const v = input as Partial<Prediction>;
+  return (
+    typeof v.matchId === 'string' &&
+    typeof v.pick === 'string' &&
+    typeof v.confidence === 'number' &&
+    !!v.probs
+  );
+}
+
+export async function getPredictionHistoryMap(
+  matches: Match[],
+): Promise<Map<string, Prediction>> {
+  const redis = getRedisClient();
+  if (!redis || matches.length === 0) return new Map();
+
+  const entries = await Promise.all(
+    matches.map(async (m) => {
+      try {
+        const raw = await redis.get<StoredPredictionSnapshot>(historyKey(m.id));
+        if (!raw || !isValidPrediction(raw.prediction)) return null;
+        return [m.id, raw.prediction] as const;
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  const map = new Map<string, Prediction>();
+  for (const e of entries) {
+    if (!e) continue;
+    map.set(e[0], e[1]);
+  }
+  return map;
+}
+
+export async function persistMissingPredictionSnapshots(
+  matches: Match[],
+  predictions: Map<string, Prediction>,
+): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis || matches.length === 0) return;
+
+  await Promise.all(
+    matches.map(async (m) => {
+      if (m.isFriendly) return;
+      const prediction = predictions.get(m.id);
+      if (!prediction) return;
+
+      const key = historyKey(m.id);
+      try {
+        const existing = await redis.get<StoredPredictionSnapshot>(key);
+        if (existing) return;
+
+        const snapshot: StoredPredictionSnapshot = {
+          matchId: m.id,
+          prediction,
+          createdAt: new Date().toISOString(),
+          kickoffAt: m.utcDate,
+        };
+
+        await redis.set(key, snapshot);
+      } catch {
+        // Keep request resilient even if Redis is temporarily unavailable.
+      }
+    }),
+  );
+}

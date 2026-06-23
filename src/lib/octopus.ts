@@ -182,7 +182,7 @@ function computeMarketExtras(
     isHomeAdv,
   );
 
-  // 大小球 — 章魚哥偏好戲劇性，OVER 加 0.04 偏置
+  // 大小 — 章魚哥偏好戲劇性，OVER 加 0.04 偏置
   const ou = overUnder(lambdaHome, lambdaAway, 2.5);
   const ouPick: 'OVER' | 'UNDER' = ou.over + 0.04 >= ou.under ? 'OVER' : 'UNDER';
   extras.overUnder = {
@@ -191,11 +191,11 @@ function computeMarketExtras(
     confidence: ouPick === 'OVER' ? Math.min(0.8, ou.over + 0.04) : ou.under,
     reasoning:
       ouPick === 'OVER'
-        ? `預期進球 ${(lambdaHome + lambdaAway).toFixed(1)}，章魚哥嗅到火藥味（${Math.round(ou.over * 100)}%）`
-        : `防守對決，總進球機率不到 2.5 球（${Math.round(ou.under * 100)}%）`,
+        ? `章魚哥預期總進球 ${(lambdaHome + lambdaAway).toFixed(1)} 球，火藥味十足（${Math.round(ou.over * 100)}%）`
+        : `防線穩固，買小球最安心（${Math.round(ou.under * 100)}%）`,
   };
 
-  // BTTS — 偏 YES
+  // 客進（雙方都進球） — 偏 YES
   const bt = bttsModel(lambdaHome, lambdaAway);
   const bttsPick: 'YES' | 'NO' = bt.yes + 0.03 >= bt.no ? 'YES' : 'NO';
   extras.btts = {
@@ -203,8 +203,8 @@ function computeMarketExtras(
     confidence: bttsPick === 'YES' ? Math.min(0.8, bt.yes + 0.03) : bt.no,
     reasoning:
       bttsPick === 'YES'
-        ? `兩隊鋒線都有破門能力（${Math.round(bt.yes * 100)}%）`
-        : `至少一方會被門將守住（${Math.round(bt.no * 100)}%）`,
+        ? `章魚哥嗅出殺氣：兩隊都會破門（${Math.round(bt.yes * 100)}%）`
+        : `其中一方防線堅強，難破門（${Math.round(bt.no * 100)}%）`,
   };
 
   // 上半場 1X2 — 純 argmax
@@ -232,7 +232,7 @@ function computeMarketExtras(
           : `${match.awayTeam.name} 客場壓迫，上半場領先`,
   };
 
-  // 進球數區間 — 偶爾抽第二名製造驚奇
+  // 總進球 — 偶爾抽第二名製造驚奇
   const tg = totalGoalsBrackets(lambdaHome, lambdaAway);
   const tgSorted = [...tg].sort((a, b) => b.prob - a.prob);
   const tgChoice =
@@ -240,10 +240,10 @@ function computeMarketExtras(
   extras.totalGoals = {
     label: tgChoice.label,
     confidence: tgChoice.prob,
-    reasoning: `預估總進球落在 ${tgChoice.label} 區間（${Math.round(tgChoice.prob * 100)}%）`,
+    reasoning: `章魚哥算盤：這場最可能在 ${tgChoice.label} 進球（${Math.round(tgChoice.prob * 100)}%）`,
   };
 
-  // 正確比分 top 3 — 偶爾抽非最高
+  // 正確比數 top 3 — 偶爾抽非最高
   const csTop = correctScoreTop(lambdaHome, lambdaAway, 3);
   let csChoice = csTop[0];
   if (csTop.length > 1 && rng() < 0.3) {
@@ -253,10 +253,10 @@ function computeMarketExtras(
     home: csChoice.home,
     away: csChoice.away,
     confidence: csChoice.prob,
-    reasoning: `章魚哥波膽：${match.homeTeam.tla} ${csChoice.home}-${csChoice.away} ${match.awayTeam.tla}`,
+    reasoning: `章魚哥正確比數：${match.homeTeam.tla} ${csChoice.home}-${csChoice.away} ${match.awayTeam.tla}`,
   };
 
-  // 讓分（由賠率隱含機率反推）
+  // 讓分 — 由賠率隱含機率反推
   if (markets?.handicap) {
     const pH = 1 / markets.handicap.homeOdds;
     const pA = 1 / markets.handicap.awayOdds;
@@ -268,7 +268,7 @@ function computeMarketExtras(
       pick: ahPick,
       line: markets.handicap.line,
       confidence: Math.max(pHn, pAn),
-      reasoning: `讓分線 ${markets.handicap.line > 0 ? '+' : ''}${markets.handicap.line}：吃 ${ahPick === 'HOME' ? match.homeTeam.name : match.awayTeam.name}`,
+      reasoning: `讓分 ${markets.handicap.line > 0 ? '+' : ''}${markets.handicap.line}：章魚哥押 ${ahPick === 'HOME' ? match.homeTeam.name : match.awayTeam.name}`,
     };
   }
 
@@ -306,8 +306,8 @@ function paulReasoning(seed: number, teamName: string, isDraw: boolean) {
  * 章魚哥神諭主函式
  *
  * 集成權重：
- *   - 有 LLM：賠率 50% + Elo 25% + 近期狀態 15% + LLM 10%
- *   - 無 LLM：賠率 55% + Elo 30% + 近期狀態 15%
+ *   - 有 LLM：盤口 50% + Elo 25% + 近期狀態 15% + LLM 10%
+ *   - 無 LLM：盤口 55% + Elo 30% + 近期狀態 15%
  *
  * 神諭文字：
  *   - 有 LLM：用 LLM narrative
@@ -355,7 +355,7 @@ export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
   }
 
   let reasoning: string;
-  let source: 'openai' | 'anthropic' | undefined;
+  let source: 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama' | undefined;
   if (ctx.llm?.narrative) {
     reasoning = ctx.llm.narrative;
     source = ctx.llm.provider;

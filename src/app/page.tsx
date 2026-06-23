@@ -4,6 +4,7 @@ import { getAggregatedData } from '@/lib/page-data';
 import { isToday, isPast, formatTaiwanDate } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
 import StatCard from '@/components/StatCard';
+import { PredictionRecords } from '@/components/PredictionRecords';
 
 export const revalidate = 300;
 
@@ -82,6 +83,20 @@ export default async function Dashboard() {
         />
       </section>
 
+      <section className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-cyan-300 sm:text-2xl">🎯 準確率預測紀錄</h2>
+          <Link
+            href="/leaderboard"
+            className="text-xs font-medium text-cyan-400 transition hover:text-cyan-200"
+          >
+            前往排行榜
+          </Link>
+        </div>
+
+        <PredictionRecords />
+      </section>
+
       {accuracy.evaluated < MIN_EVALUATED && (
         <div className="mt-4 flex items-start gap-2 rounded-2xl border border-yellow-500/50 bg-yellow-900/20 px-4 py-3 text-xs text-yellow-400 backdrop-blur">
           <span className="text-lg">💡</span>
@@ -143,6 +158,7 @@ export default async function Dashboard() {
           </Link>
         </section>
       )}
+
     </div>
   );
 }
