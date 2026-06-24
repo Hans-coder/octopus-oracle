@@ -400,7 +400,7 @@ function RevealedState({
             </motion.span>
             <motion.span
               className={cn(
-                'text-lg font-bold',
+                'truncate text-lg font-bold',
                 isCorrect === false
                   ? 'text-slate-400 line-through decoration-rose-400/60'
                   : 'text-white',
@@ -408,6 +408,7 @@ function RevealedState({
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.12 }}
+              title={prediction.pickedTeamName}
             >
               {prediction.pickedTeamName}
             </motion.span>
@@ -426,7 +427,7 @@ function RevealedState({
       {!compact && (
         <motion.p
           className={cn(
-            'relative mt-3 text-xs italic leading-relaxed',
+            'relative mt-3 break-words text-xs italic leading-relaxed',
             isCorrect === false ? 'text-slate-500' : 'text-slate-300',
           )}
           initial={{ opacity: 0, y: 6 }}

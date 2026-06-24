@@ -31,7 +31,7 @@ export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
   return (
     <article
       className={cn(
-        'group flex flex-col gap-4 rounded-3xl border bg-slate-900/60 p-5 backdrop-blur-sm transition',
+        'group flex min-w-0 flex-col gap-4 rounded-3xl border bg-slate-900/60 p-5 backdrop-blur-sm transition',
         isFinished
           ? 'border-white/15 hover:border-amber-400/30 hover:shadow-[0_0_30px_-15px_rgba(251,191,36,0.4)]'
           : isLive
@@ -71,7 +71,7 @@ export default function MatchCard({ match, odds, prediction }: MatchCardProps) {
 
       <div
         className={cn(
-          'grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl p-1 transition',
+          'grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 rounded-2xl p-1 transition',
           isFinished &&
             'bg-gradient-to-r from-transparent via-slate-800/40 to-transparent',
         )}
@@ -259,7 +259,7 @@ function TeamBlock({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-xl px-1 py-1 transition',
+        'flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 transition',
         align === 'right' ? 'flex-row-reverse text-right' : 'text-left',
         isFinished && isWinner && 'bg-amber-400/10 ring-1 ring-amber-400/30',
       )}
@@ -271,6 +271,7 @@ function TeamBlock({
             'truncate text-sm font-bold sm:text-base',
             isWinner ? 'text-amber-200' : isFinished ? 'text-slate-400' : 'text-white',
           )}
+          title={name}
         >
           {name}
           {isFinished && isWinner && (

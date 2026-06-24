@@ -1,6 +1,7 @@
 import { getAggregatedData } from '@/lib/page-data';
 import { formatTaiwanDate } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
+import AdBanner from '@/components/AdBanner';
 
 export const revalidate = 300;
 
@@ -28,6 +29,8 @@ export default async function MatchesPage() {
         <p className="mt-2 text-slate-600">共 <span className="font-semibold">{matches.length}</span> 場，含章魚哥的神諭與即時賠率。</p>
       </header>
 
+      <AdBanner className="mb-6" label="賽程贊助內容" />
+
       {Object.entries(grouped).map(([dateKey, items]) => (
         <section key={dateKey} className="mb-8">
           <h2 className="mb-4 text-base font-bold text-cyan-400 uppercase tracking-wide border-l-4 border-cyan-500 pl-3">
@@ -52,6 +55,8 @@ export default async function MatchesPage() {
           <p className="text-slate-600">暫無賽程資料。</p>
         </div>
       )}
+
+      {matches.length > 0 && <AdBanner className="mt-2" label="更多足球優惠" />}
     </div>
   );
 }

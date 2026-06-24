@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Heart, MinusCircle, TrendingUp, XCircle } from 'lucide-react';
 import { cn, formatTaiwanTime } from '@/lib/utils';
+import AdBanner from '@/components/AdBanner';
 
 interface LeaderboardContentProps {
   accuracy: {
@@ -109,6 +110,7 @@ export function LeaderboardContent({
         <h2 className="mb-4 text-xl font-bold text-cyan-300 flex items-center gap-2">
           <span>📋</span> 預測紀錄
         </h2>
+        <AdBanner className="mb-4" label="準確率頁面贊助廣告" />
         <LeaderboardPredictionRecords />
       </section>
     </div>
@@ -217,7 +219,7 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
   return (
     <li
       className={cn(
-        'rounded-2xl border-2 px-4 py-3 transition-all hover:shadow-lg backdrop-blur',
+        'rounded-2xl border-2 px-4 py-3 transition-all hover:shadow-lg backdrop-blur overflow-hidden',
         record.correct === true
           ? 'border-emerald-500/50 bg-emerald-900/20'
           : record.correct === false
@@ -226,14 +228,14 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
       )}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-slate-100">
             <span className="text-lg">{record.match.homeFlag ?? '🏳️'}</span>
-            <span className="truncate">{record.match.homeName ?? '主隊'}</span>
+            <span className="max-w-[8rem] truncate sm:max-w-[10rem]">{record.match.homeName ?? '主隊'}</span>
             <span className="font-mono text-cyan-400 bg-slate-700/50 rounded px-2 py-1">
               {hasScore ? `${record.match.homeScore}-${record.match.awayScore}` : 'FT'}
             </span>
-            <span className="truncate">{record.match.awayName ?? '客隊'}</span>
+            <span className="max-w-[8rem] truncate sm:max-w-[10rem]">{record.match.awayName ?? '客隊'}</span>
             <span className="text-lg">{record.match.awayFlag ?? '🏳️'}</span>
           </div>
 
@@ -247,9 +249,9 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="rounded-xl bg-slate-700/50 px-3 py-2 border border-cyan-500/50 flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-100">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 rounded-xl border border-cyan-500/50 bg-slate-700/50 px-3 py-2">
+            <span className="truncate text-sm font-semibold text-slate-100 sm:max-w-[9rem]">
               {record.pickedTeamFlag} {record.pickedTeam}
             </span>
             {record.correct === true ? (
@@ -258,7 +260,7 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
               <XCircle className="h-4 w-4 text-rose-400" />
             ) : null}
           </div>
-          <span className="text-xs font-semibold text-cyan-400 w-12 text-right">
+          <span className="w-12 text-right text-xs font-semibold text-cyan-400">
             {record.confidence}%
           </span>
           <button
