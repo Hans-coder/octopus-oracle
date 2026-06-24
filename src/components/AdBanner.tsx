@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import Script from 'next/script';
 
 declare global {
   interface Window {
@@ -54,13 +53,6 @@ export default function AdBanner({
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-cyan-300/90">
         {label}
       </p>
-      <Script
-        id="adsense-script"
-        async
-        strategy="afterInteractive"
-        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${clientId}`}
-        crossOrigin="anonymous"
-      />
       <ins
         className="adsbygoogle block min-h-[90px] w-full"
         style={{ display: 'block' }}
