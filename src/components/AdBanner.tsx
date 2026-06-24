@@ -45,7 +45,7 @@ export default function AdBanner({
         {label}
       </p>
       <ins
-        className="adsbygoogle block min-h-[90px] w-full"
+        className="adsbygoogle block min-h-[56px] w-full"
         style={{ display: 'block' }}
         data-ad-client={clientId}
         data-ad-slot={slotId}
