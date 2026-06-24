@@ -268,7 +268,7 @@ function TeamBlock({
       <div className="min-w-0">
         <div
           className={cn(
-            'truncate text-sm font-bold sm:text-base',
+            'whitespace-normal break-words text-sm font-bold leading-tight sm:text-base',
             isWinner ? 'text-amber-200' : isFinished ? 'text-slate-400' : 'text-white',
           )}
           title={name}

@@ -231,11 +231,11 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-slate-100">
             <span className="text-lg">{record.match.homeFlag ?? '🏳️'}</span>
-            <span className="max-w-[8rem] truncate sm:max-w-[10rem]">{record.match.homeName ?? '主隊'}</span>
+            <span className="max-w-[10rem] whitespace-normal break-words leading-tight sm:max-w-[12rem]">{record.match.homeName ?? '主隊'}</span>
             <span className="font-mono text-cyan-400 bg-slate-700/50 rounded px-2 py-1">
               {hasScore ? `${record.match.homeScore}-${record.match.awayScore}` : 'FT'}
             </span>
-            <span className="max-w-[8rem] truncate sm:max-w-[10rem]">{record.match.awayName ?? '客隊'}</span>
+            <span className="max-w-[10rem] whitespace-normal break-words leading-tight sm:max-w-[12rem]">{record.match.awayName ?? '客隊'}</span>
             <span className="text-lg">{record.match.awayFlag ?? '🏳️'}</span>
           </div>
 
@@ -251,7 +251,7 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
 
         <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
           <div className="flex min-w-0 items-center gap-2 rounded-xl border border-cyan-500/50 bg-slate-700/50 px-3 py-2">
-            <span className="truncate text-sm font-semibold text-slate-100 sm:max-w-[9rem]">
+            <span className="max-w-[9rem] whitespace-normal break-words text-sm font-semibold leading-tight text-slate-100 sm:max-w-[12rem]">
               {record.pickedTeamFlag} {record.pickedTeam}
             </span>
             {record.correct === true ? (
