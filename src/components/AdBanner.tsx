@@ -13,12 +13,17 @@ type AdBannerProps = {
   label?: string;
 };
 
+const ADSENSE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4662523495462452';
+const ADSENSE_SLOT_ID =
+  process.env.NEXT_PUBLIC_ADSENSE_SLOT_ID ?? '7355293133';
+
 export default function AdBanner({
   className = '',
   label = '贊助廣告',
 }: AdBannerProps) {
-  const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
-  const slotId = process.env.NEXT_PUBLIC_ADSENSE_SLOT_ID;
+  const clientId = ADSENSE_CLIENT_ID;
+  const slotId = ADSENSE_SLOT_ID;
 
   useEffect(() => {
     if (!clientId || !slotId) return;
@@ -30,20 +35,6 @@ export default function AdBanner({
       // Ignore ad script push errors so UI keeps rendering.
     }
   }, [clientId, slotId]);
-
-  if (!clientId || !slotId) {
-    return (
-      <div
-        className={`rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-xs text-amber-200 ${className}`}
-      >
-        <p className="font-semibold">{label}</p>
-        <p className="mt-1 text-amber-100/80">
-          尚未設定 Google AdSense。請加入 NEXT_PUBLIC_ADSENSE_CLIENT_ID 與
-          NEXT_PUBLIC_ADSENSE_SLOT_ID。
-        </p>
-      </div>
-    );
-  }
 
   return (
     <section
