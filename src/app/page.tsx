@@ -4,6 +4,7 @@ import { getAggregatedData } from '@/lib/page-data';
 import { isToday, isPast, formatTaiwanDate } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
 import StatCard from '@/components/StatCard';
+import AdBanner from '@/components/AdBanner';
 
 export const revalidate = 300;
 
@@ -82,6 +83,8 @@ export default async function Dashboard() {
         />
       </section>
 
+      <AdBanner className="mt-4" label="合作廣告" />
+
       {accuracy.evaluated < MIN_EVALUATED && (
         <div className="mt-4 flex items-start gap-2 rounded-2xl border border-yellow-500/50 bg-yellow-900/20 px-4 py-3 text-xs text-yellow-400 backdrop-blur">
           <span className="text-lg">💡</span>
@@ -143,6 +146,8 @@ export default async function Dashboard() {
           </Link>
         </section>
       )}
+
+      <AdBanner className="mt-8" label="更多優惠" />
 
     </div>
   );
