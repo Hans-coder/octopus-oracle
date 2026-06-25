@@ -15,13 +15,10 @@ export default function SupportCard({ className = '' }: SupportCardProps) {
 
   return (
     <aside
-      className={`w-full rounded-2xl border border-pink-400/40 bg-gradient-to-br from-slate-900/80 via-pink-950/30 to-slate-900/80 p-3 backdrop-blur ${className}`}
+      className={`w-full rounded-2xl border border-pink-400/40 bg-gradient-to-r from-pink-900/20 via-slate-900/60 to-pink-900/20 p-3 backdrop-blur ${className}`}
       aria-label="小額贊助"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-pink-300">
-        小額支持
-      </p>
-      <h3 className="mt-1.5 text-base font-bold text-white">請章魚哥喝杯珍奶 🧋</h3>
+      <h3 className="text-base font-bold text-white">請章魚哥喝杯珍奶 🧋</h3>
       <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
         支持伺服器與資料維運，讓賽事更新更即時。
       </p>
@@ -56,14 +53,6 @@ export default function SupportCard({ className = '' }: SupportCardProps) {
           尚未設定贊助連結：請在 Vercel 加入 NEXT_PUBLIC_SUPPORT_URL
         </p>
       )}
-
-      <div className="mt-2.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-2">
-        <p className="text-[11px] font-semibold text-cyan-200">賠率與預測注意事項</p>
-        <ul className="mt-1 space-y-0.5 text-[11px] leading-relaxed text-cyan-100/90">
-          <li>1. 賠率可能有延遲，請以官方盤口為準。</li>
-          <li>2. 預測僅供娛樂參考，不構成任何下注建議。</li>
-        </ul>
-      </div>
     </aside>
   );
 }

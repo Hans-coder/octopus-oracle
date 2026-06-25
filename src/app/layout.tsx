@@ -49,7 +49,9 @@ export default function RootLayout({
         <footer className="border-t border-slate-700/40 bg-slate-900/30 py-4 px-4 text-center text-xs text-slate-400">
           <p className="mb-1.5">⚠️ <strong>免責聲明：</strong>預測結果僅供娛樂參考，非投資建議。</p>
           <p className="mb-1">📊 盤口來源：ESPN 美國實時賠率（非台灣運彩官方數據）</p>
-          <p>❌ 不應用於真實投注決策，請參考官方賠率。</p>
+          <p className="mb-1">❌ 不應用於真實投注決策，請參考官方賠率。</p>
+          <p className="mb-1">🧾 賠率可能有延遲，請以投注當下官方盤口與公告為準。</p>
+          <p>🔞 請遵守所在地法規與年齡限制，理性參與、量力而為。</p>
         </footer>
       </body>
     </html>

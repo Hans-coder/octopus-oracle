@@ -40,20 +40,16 @@ export default async function Dashboard() {
           <div className="flex-1">
             <p className="text-xs uppercase tracking-widest font-bold text-cyan-400">🏆 2026 World Cup 預測</p>
             <h1 className="mt-3 text-3xl font-bold text-cyan-300 sm:text-4xl leading-tight">
-              章魚哥的<br className="hidden sm:block" />
-              神諭系統
+              章魚哥的神諭系統
             </h1>
-            <p className="mt-3 text-sm text-slate-300 sm:text-base leading-relaxed max-w-2xl">
+            <p className="mt-3 text-sm text-slate-300 sm:text-base leading-relaxed">
               用數據和直覺預測比賽結果。我們融合賠率、Elo 等級、近期狀態，搭配選擇性 AI 分析，提供可信的預測。
             </p>
+            <SupportCard className="mt-4 max-w-xl" />
           </div>
           <div className="hidden sm:block text-8xl opacity-20 flex-shrink-0">🐙</div>
         </div>
       </section>
-
-      <div className="mt-4 flex justify-end">
-        <SupportCard className="w-full sm:max-w-[320px]" />
-      </div>
 
       <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <StatCard
