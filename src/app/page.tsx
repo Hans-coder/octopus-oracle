@@ -5,6 +5,7 @@ import { isToday, isPast, formatTaiwanDate } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
 import StatCard from '@/components/StatCard';
 import AdBanner from '@/components/AdBanner';
+import SupportCard from '@/components/SupportCard';
 
 export const revalidate = 300;
 
@@ -35,7 +36,7 @@ export default async function Dashboard() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <section className="overflow-hidden rounded-3xl border-2 border-cyan-500 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 p-6 shadow-lg sm:p-8 cyber-glow">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:gap-6">
           <div className="flex-1">
             <p className="text-xs uppercase tracking-widest font-bold text-cyan-400">🏆 2026 World Cup 預測</p>
             <h1 className="mt-3 text-3xl font-bold text-cyan-300 sm:text-4xl leading-tight">
@@ -46,7 +47,9 @@ export default async function Dashboard() {
               用數據和直覺預測比賽結果。我們融合賠率、Elo 等級、近期狀態，搭配選擇性 AI 分析，提供可信的預測。
             </p>
           </div>
-          <div className="hidden sm:block text-8xl opacity-20 flex-shrink-0">🐙</div>
+          <div className="w-full lg:max-w-[320px] lg:flex-shrink-0">
+            <SupportCard />
+          </div>
         </div>
       </section>
 
