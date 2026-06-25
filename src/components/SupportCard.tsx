@@ -2,16 +2,22 @@ type SupportCardProps = {
   className?: string;
 };
 
-const SUPPORT_URL = process.env.NEXT_PUBLIC_SUPPORT_URL ?? '';
-
-function amountUrl(amount: number): string {
-  if (!SUPPORT_URL) return '#';
-  const separator = SUPPORT_URL.includes('?') ? '&' : '?';
-  return `${SUPPORT_URL}${separator}amount=${amount}`;
-}
+const SUPPORT_URL_60 =
+  process.env.NEXT_PUBLIC_SUPPORT_URL_60 ??
+  'https://www.paypal.com/ncp/payment/9QCA832QU7HFS';
+const SUPPORT_URL_120 =
+  process.env.NEXT_PUBLIC_SUPPORT_URL_120 ??
+  'https://www.paypal.com/ncp/payment/62QWVWR7TYALJ';
+const SUPPORT_URL_300 =
+  process.env.NEXT_PUBLIC_SUPPORT_URL_300 ??
+  'https://www.paypal.com/ncp/payment/Z4MJ5H4FVT4MJ';
 
 export default function SupportCard({ className = '' }: SupportCardProps) {
-  const amounts = [60, 120, 300];
+  const options = [
+    { amount: 60, url: SUPPORT_URL_60 },
+    { amount: 120, url: SUPPORT_URL_120 },
+    { amount: 300, url: SUPPORT_URL_300 },
+  ];
 
   return (
     <aside
@@ -24,35 +30,27 @@ export default function SupportCard({ className = '' }: SupportCardProps) {
       </p>
 
       <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-        {amounts.map((amount) => (
+        {options.map((item) => (
           <a
-            key={amount}
-            href={amountUrl(amount)}
+            key={item.amount}
+            href={item.url}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center rounded-lg border border-pink-300/50 bg-pink-500/15 px-2 py-1.5 text-xs font-semibold text-pink-100 transition hover:bg-pink-500/25"
-            aria-disabled={!SUPPORT_URL}
           >
-            NT${amount}
+            NT${item.amount}
           </a>
         ))}
       </div>
 
       <a
-        href={SUPPORT_URL || '#'}
+        href={SUPPORT_URL_120}
         target="_blank"
         rel="noreferrer"
         className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-pink-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-pink-400"
-        aria-disabled={!SUPPORT_URL}
       >
         立即贊助
       </a>
-
-      {!SUPPORT_URL && (
-        <p className="mt-2 rounded-lg border border-amber-400/50 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-200">
-          尚未設定贊助連結：請在 Vercel 加入 NEXT_PUBLIC_SUPPORT_URL
-        </p>
-      )}
     </aside>
   );
 }
