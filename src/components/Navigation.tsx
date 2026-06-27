@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, CalendarDays, BarChart3 } from 'lucide-react';
+import { Home, CalendarDays, BarChart3, ExternalLink } from 'lucide-react';
 
 const links = [
   { href: '/', label: '首頁', icon: Home },
@@ -19,19 +19,32 @@ export default function Navigation() {
           </div>
         </Link>
 
-        <ul className="flex items-center gap-0.5">
-          {links.map(({ href, label, icon: Icon }) => (
-            <li key={href}>
-              <Link
-                href={href}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-cyan-300"
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="flex items-center gap-1">
+          <ul className="flex items-center gap-0.5">
+            {links.map(({ href, label, icon: Icon }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-cyan-300"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <a
+            href="https://www.sportslottery.com.tw"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-400"
+          >
+            <span className="hidden sm:inline">台灣運彩</span>
+            <span className="sm:hidden">運彩</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </div>
       </nav>
     </header>
   );
