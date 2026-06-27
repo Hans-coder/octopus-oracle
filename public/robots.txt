@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# 明確允許 Google AdSense 廣告爬蟲
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: Googlebot-ads
+Allow: /

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
 import Navigation from '@/components/Navigation';
 import './globals.css';
 
@@ -36,14 +37,14 @@ export default function RootLayout({
       lang="zh-Hant"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <script
+      <head />
+      <body className="min-h-full flex flex-col">
+        <Script
           async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
           crossOrigin="anonymous"
+          strategy="afterInteractive"
         />
-      </head>
-      <body className="min-h-full flex flex-col">
         <Navigation />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-slate-700/40 bg-slate-900/30 py-4 px-4 text-center text-xs text-slate-400">
