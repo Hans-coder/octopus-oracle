@@ -37,7 +37,6 @@ export default function RootLayout({
       lang="zh-Hant"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head />
       <body className="min-h-full flex flex-col">
         <Script
           async
