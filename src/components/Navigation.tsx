@@ -11,12 +11,11 @@ export default function Navigation() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-700 bg-slate-900/98 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <Link href="/" className="flex items-center gap-2 group">
           <span className="text-2xl group-hover:scale-110 transition transform">🐙</span>
-          <div className="leading-tight">
-            <p className="text-sm font-bold text-cyan-400 sm:text-base tracking-tight">章魚哥</p>
-            <p className="text-[10px] text-cyan-600 font-medium">ORACLE</p>
-          </div>
+          <span className="text-lg font-bold tracking-wide bg-gradient-to-r from-cyan-300 to-cyan-500 bg-clip-text text-transparent group-hover:from-cyan-200 group-hover:to-cyan-400 transition-all">
+            章魚哥 Oracle
+          </span>
         </Link>
 
         <div className="flex items-center gap-1">
