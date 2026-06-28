@@ -29,31 +29,43 @@ export function stringToSeed(str: string): number {
   return hash >>> 0;
 }
 
-/** 格式化成台灣時區時間字串 */
+/**
+ * 取得 UTC+8（台灣）時間的 Date 物件
+ * 用 UTC 方法讀取，避免 toLocaleString ICU 版本差異造成 hydration #418
+ */
+function toTaiwanDate(iso: string): Date {
+  return new Date(new Date(iso).getTime() + 8 * 60 * 60 * 1000);
+}
+
+const WEEKDAY_SHORT = ['日', '一', '二', '三', '四', '五', '六'];
+const WEEKDAY_LONG  = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+/** 格式化成台灣時區時間字串（手動 UTC+8，Server/Client 輸出完全一致） */
 export function formatTaiwanTime(iso: string): string {
-  return new Date(iso).toLocaleString('zh-TW', {
-    timeZone: 'Asia/Taipei',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    weekday: 'short',
-    hour12: false,
-  });
+  const d = toTaiwanDate(iso);
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mi = String(d.getUTCMinutes()).padStart(2, '0');
+  const wd = WEEKDAY_SHORT[d.getUTCDay()];
+  return `${mm}/${dd} (${wd}) ${hh}:${mi}`;
 }
 
 export function formatTaiwanDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('zh-TW', {
-    timeZone: 'Asia/Taipei',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  });
+  const d = toTaiwanDate(iso);
+  const month = d.getUTCMonth() + 1;
+  const day   = d.getUTCDate();
+  const wd    = WEEKDAY_LONG[d.getUTCDay()];
+  return `${month}月${day}日 ${wd}`;
 }
 
 export function isSameTaiwanDay(a: string, b: string): boolean {
-  const fmt = (s: string) =>
-    new Date(s).toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const fmt = (s: string) => {
+    const d = toTaiwanDate(s);
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return `${d.getUTCFullYear()}-${mm}-${dd}`;
+  };
   return fmt(a) === fmt(b);
 }
 
