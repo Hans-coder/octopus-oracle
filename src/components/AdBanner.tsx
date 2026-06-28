@@ -51,6 +51,7 @@ export default function AdBanner({
         data-ad-slot={slotId}
         data-ad-format="auto"
         data-full-width-responsive="true"
+        suppressHydrationWarning
       />
     </section>
   );
