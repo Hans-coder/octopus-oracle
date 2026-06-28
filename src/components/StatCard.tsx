@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   icon: string;
   label: string;
   value: string | number;
-  hint?: string;
+  hint?: ReactNode;
   accent?: 'cyan' | 'emerald' | 'blue' | 'purple';
 }
 

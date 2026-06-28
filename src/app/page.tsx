@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { getAggregatedData } from '@/lib/page-data';
-import { isToday, isPast, formatTaiwanDate } from '@/lib/utils';
+import { isToday, isPast } from '@/lib/utils';
 import MatchCard from '@/components/MatchCard';
 import StatCard from '@/components/StatCard';
 import AdBanner from '@/components/AdBanner';
 import SupportCard from '@/components/SupportCard';
+import TodayDateHint from '@/components/TodayDateHint';
 
 export const revalidate = 300;
 
@@ -56,7 +57,7 @@ export default async function Dashboard() {
           icon="📅"
           label="今日賽事"
           value={todayMatches.length}
-          hint={formatTaiwanDate(new Date().toISOString())}
+          hint={<TodayDateHint />}
           accent="cyan"
         />
         <StatCard
