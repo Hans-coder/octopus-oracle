@@ -54,8 +54,14 @@ export async function getAggregatedData(): Promise<AggregatedData> {
   // Persist accuracy records for finished matches to preserve stats
   await persistAccuracyRecords(matches, freshPredictions);
 
+  const isPlaceholderPrediction = (pred: Prediction) =>
+    pred.pickedTeamName === '待定' ||
+    pred.pickedTeamFlag === '❔' ||
+    pred.pickedTeamName === 'TBD';
+
   const predictions = new Map(freshPredictions);
   for (const [matchId, prediction] of historyPredictions) {
+    if (isPlaceholderPrediction(prediction)) continue;
     predictions.set(matchId, prediction);
   }
 

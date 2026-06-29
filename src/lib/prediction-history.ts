@@ -41,9 +41,20 @@ export async function getPredictionHistoryMap(
     }),
   );
 
+  const isPlaceholder = (name: string, flag: string) =>
+    name === '待定' || flag === '❔';
+
   const map = new Map<string, Prediction>();
   for (const e of entries) {
     if (!e) continue;
+    const pred = e[1];
+    // Skip stale TBD predictions stored before the fix.
+    if (
+      isPlaceholder(pred.pickedTeamName, pred.pickedTeamFlag) ||
+      pred.pickedTeamName === 'TBD'
+    ) {
+      continue;
+    }
     map.set(e[0], e[1]);
   }
   return map;
