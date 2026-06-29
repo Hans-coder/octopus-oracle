@@ -22,11 +22,11 @@ export default async function MatchesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header className="mb-8">
-        <h1 className="flex items-center gap-3 text-3xl font-bold text-slate-900 sm:text-4xl">
+        <h1 className="flex items-center gap-3 text-3xl font-bold text-cyan-300 sm:text-4xl">
           <span className="text-4xl">⚽</span>
           賽程一覽
         </h1>
-        <p className="mt-2 text-slate-600">共 <span className="font-semibold">{matches.length}</span> 場，含章魚哥的神諭與即時賠率。</p>
+        <p className="mt-2 text-slate-300">共 <span className="font-semibold text-cyan-200">{matches.length}</span> 場，含章魚哥的神諭與即時賠率。</p>
       </header>
 
       <AdBanner className="mb-6" label="賽程贊助內容" />

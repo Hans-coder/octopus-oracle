@@ -384,8 +384,22 @@ export function predictAll(
   statsMap: Map<string, MatchStats>,
   llmMap: Map<string, LLMAnalysis>,
 ): Map<string, Prediction> {
+  const isPlaceholderTeam = (name: string, tla: string, flag: string) => {
+    const n = name.trim();
+    const t = tla.trim().toUpperCase();
+    return n === '待定' || t === 'TBD' || flag === '❔';
+  };
+
   const result = new Map<string, Prediction>();
   for (const m of matches) {
+    // Knockout placeholder teams (e.g. TBD / ❔) should not produce predictions.
+    if (
+      isPlaceholderTeam(m.homeTeam.name, m.homeTeam.tla, m.homeTeam.flag) ||
+      isPlaceholderTeam(m.awayTeam.name, m.awayTeam.tla, m.awayTeam.flag)
+    ) {
+      continue;
+    }
+
     const stats = statsMap.get(m.id);
     if (!stats) continue;
     const ctx: PredictContext = {
