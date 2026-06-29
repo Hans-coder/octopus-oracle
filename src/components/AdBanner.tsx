@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 declare global {
   interface Window {
@@ -24,16 +24,52 @@ export default function AdBanner({
 }: AdBannerProps) {
   const clientId = ADSENSE_CLIENT_ID;
   const slotId = ADSENSE_SLOT_ID;
+  const adRef = useRef<HTMLModElement | null>(null);
 
   useEffect(() => {
     if (!clientId || !slotId) return;
 
-    try {
-      window.adsbygoogle = window.adsbygoogle || [];
-      window.adsbygoogle.push({});
-    } catch {
-      // Ignore ad script push errors so UI keeps rendering.
-    }
+    let cancelled = false;
+    let attempts = 0;
+
+    const tryInitAd = () => {
+      if (cancelled) return;
+      attempts += 1;
+
+      const el = adRef.current;
+      if (!el) return;
+
+      // Avoid duplicate initialization on the same ad element.
+      if (el.getAttribute('data-adsbygoogle-status')) return;
+
+      const scriptReady =
+        typeof window !== 'undefined' &&
+        Array.isArray(window.adsbygoogle) &&
+        typeof window.adsbygoogle.push === 'function';
+
+      if (!scriptReady) {
+        if (attempts < 20) {
+          window.setTimeout(tryInitAd, 300);
+        }
+        return;
+      }
+
+      try {
+        window.adsbygoogle = window.adsbygoogle || [];
+        window.adsbygoogle.push({});
+      } catch {
+        if (attempts < 20) {
+          window.setTimeout(tryInitAd, 300);
+        }
+      }
+    };
+
+    // Defer slightly to avoid racing the async script injection.
+    window.setTimeout(tryInitAd, 120);
+
+    return () => {
+      cancelled = true;
+    };
   }, [clientId, slotId]);
 
   return (
@@ -45,7 +81,8 @@ export default function AdBanner({
         {label}
       </p>
       <ins
-        className="adsbygoogle block min-h-[56px] w-full"
+        ref={adRef}
+        className="adsbygoogle block min-h-[90px] w-full"
         style={{ display: 'block' }}
         data-ad-client={clientId}
         data-ad-slot={slotId}
