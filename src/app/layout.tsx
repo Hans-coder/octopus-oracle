@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import AdSenseLoader from '@/components/AdSenseLoader';
 import './globals.css';
@@ -40,7 +41,11 @@ export default function RootLayout({
         <AdSenseLoader />
         <Navigation />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-slate-700/40 bg-slate-900/30 py-4 px-4 text-center text-xs text-slate-400">
+        <footer className="border-t border-slate-700/40 bg-slate-900/30 px-4 py-4 text-center text-xs text-slate-400">
+          <div className="mb-3 flex items-center justify-center gap-4 text-sm">
+            <Link href="/privacy" className="text-slate-300 transition hover:text-cyan-300">隱私權政策</Link>
+            <Link href="/contact" className="text-slate-300 transition hover:text-cyan-300">聯絡我們</Link>
+          </div>
           <p className="mb-1.5">⚠️ <strong>免責聲明：</strong>預測結果僅供娛樂參考，非投資建議。</p>
           <p className="mb-1">📊 盤口來源：ESPN 美國實時賠率（非台灣運彩官方數據）</p>
           <p className="mb-1">❌ 不應用於真實投注決策，請參考官方賠率。</p>

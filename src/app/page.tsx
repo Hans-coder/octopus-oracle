@@ -48,9 +48,12 @@ export default async function Dashboard() {
     recentAccuracy.evaluated < MIN_EVALUATED
       ? '—'
       : `${Math.round(recentAccuracy.accuracy * 100)}%`;
+  const baselineDelta = (accuracy.accuracy - oddsBaselineAccuracy.accuracy) * 100;
   const baselineDeltaLabel =
     oddsBaselineAccuracy.evaluated > 0
-      ? `${((accuracy.accuracy - oddsBaselineAccuracy.accuracy) * 100).toFixed(1)}pp vs 純盤口`
+      ? baselineDelta >= 0
+        ? `目前比單看盤口高 ${baselineDelta.toFixed(1)} 個百分點`
+        : `目前比單看盤口低 ${Math.abs(baselineDelta).toFixed(1)} 個百分點`
       : '純盤口基準樣本累積中';
 
   const latestOddsUpdatedAt = Array.from(oddsMap.values()).reduce<string | null>(

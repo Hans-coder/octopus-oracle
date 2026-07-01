@@ -108,15 +108,15 @@ export function statusToChinese(status: string): string {
 }
 
 export function confidenceToLabel(confidence: number): string {
-  if (confidence >= 0.72) return '高信心';
-  if (confidence >= 0.56) return '中等信心';
-  if (confidence >= 0.45) return '保守觀點';
-  return '審慎觀望';
+  if (confidence >= 0.72) return '主推';
+  if (confidence >= 0.56) return '偏向';
+  if (confidence >= 0.45) return '五五波';
+  return '冷門留意';
 }
 
 export function confidenceToRange(confidence: number): string {
-  if (confidence >= 0.72) return '72%+';
-  if (confidence >= 0.56) return '56-71%';
-  if (confidence >= 0.45) return '45-55%';
-  return '<45%';
+  if (confidence >= 0.72) return '七成以上';
+  if (confidence >= 0.56) return '五成六到七成一';
+  if (confidence >= 0.45) return '五成上下';
+  return '四成五以下';
 }

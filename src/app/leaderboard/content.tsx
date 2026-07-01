@@ -41,6 +41,7 @@ export function LeaderboardContent({
 }: LeaderboardContentProps) {
   const hasEnough = accuracy.evaluated >= minEvaluated;
   const hasEnoughRecent = recentAccuracy.evaluated >= minEvaluated;
+  const baselineDelta = (accuracy.accuracy - oddsBaselineAccuracy.accuracy) * 100;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -87,14 +88,16 @@ export function LeaderboardContent({
         </div>
 
         <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-900/20 px-4 py-3">
-          <p className="text-xs font-medium text-emerald-300">純盤口基準比較</p>
+          <p className="text-xs font-medium text-emerald-300">和單看盤口相比</p>
           <p className="mt-1 text-2xl font-bold text-emerald-200">
             {oddsBaselineAccuracy.evaluated > 0
-              ? `${((accuracy.accuracy - oddsBaselineAccuracy.accuracy) * 100).toFixed(1)}pp`
+              ? baselineDelta >= 0
+                ? `高 ${baselineDelta.toFixed(1)}pp`
+                : `低 ${Math.abs(baselineDelta).toFixed(1)}pp`
               : '—'}
           </p>
           <p className="text-xs text-emerald-200/80">
-            純盤口 {Math.round(oddsBaselineAccuracy.accuracy * 100)}% · {oddsBaselineAccuracy.correct} / {oddsBaselineAccuracy.evaluated} 場
+            用來比較章魚哥是否真的比直接照盤口更有優勢。盤口基準 {Math.round(oddsBaselineAccuracy.accuracy * 100)}% · {oddsBaselineAccuracy.correct} / {oddsBaselineAccuracy.evaluated} 場
           </p>
         </div>
 
