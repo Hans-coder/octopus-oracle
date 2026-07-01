@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Heart, MinusCircle, TrendingUp, XCircle } from 'lucide-react';
-import { cn, formatTaiwanTime } from '@/lib/utils';
+import { cn, confidenceToLabel, confidenceToRange, formatTaiwanTime } from '@/lib/utils';
 import AdBanner from '@/components/AdBanner';
 
 interface LeaderboardContentProps {
@@ -22,6 +22,12 @@ interface LeaderboardContentProps {
     correct: number;
     accuracy: number;
   };
+  oddsBaselineAccuracy: {
+    total: number;
+    evaluated: number;
+    correct: number;
+    accuracy: number;
+  };
   engineName: string;
   minEvaluated: number;
 }
@@ -29,6 +35,7 @@ interface LeaderboardContentProps {
 export function LeaderboardContent({
   accuracy,
   recentAccuracy,
+  oddsBaselineAccuracy,
   engineName,
   minEvaluated,
 }: LeaderboardContentProps) {
@@ -76,6 +83,18 @@ export function LeaderboardContent({
           </p>
           <p className="text-xs text-violet-200/80">
             {recentAccuracy.correct} / {recentAccuracy.evaluated} 場命中
+          </p>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-900/20 px-4 py-3">
+          <p className="text-xs font-medium text-emerald-300">純盤口基準比較</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-200">
+            {oddsBaselineAccuracy.evaluated > 0
+              ? `${((accuracy.accuracy - oddsBaselineAccuracy.accuracy) * 100).toFixed(1)}pp`
+              : '—'}
+          </p>
+          <p className="text-xs text-emerald-200/80">
+            純盤口 {Math.round(oddsBaselineAccuracy.accuracy * 100)}% · {oddsBaselineAccuracy.correct} / {oddsBaselineAccuracy.evaluated} 場
           </p>
         </div>
 
@@ -233,6 +252,7 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
   const hasScore =
     typeof record.match.homeScore === 'number' &&
     typeof record.match.awayScore === 'number';
+  const confidence = Math.max(0, Math.min(1, record.confidence / 100));
 
   return (
     <li
@@ -278,9 +298,10 @@ function PredictionRecordRow({ record }: { record: LeaderboardRecord }) {
               <XCircle className="h-4 w-4 text-rose-400" />
             ) : null}
           </div>
-          <span className="w-12 text-right text-xs font-semibold text-cyan-400">
-            {record.confidence}%
-          </span>
+          <div className="text-right">
+            <p className="text-xs font-semibold text-cyan-400">{confidenceToLabel(confidence)}</p>
+            <p className="text-[10px] text-slate-400">{confidenceToRange(confidence)}</p>
+          </div>
           <button
             onClick={() => setLikes((prev) => prev + 1)}
             className="ml-2 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-pink-900/40 hover:bg-pink-900/60 border border-pink-500/50 transition-all transform hover:scale-110"

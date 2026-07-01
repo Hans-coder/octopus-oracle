@@ -15,7 +15,7 @@ import type {
   Prediction,
   PredictionPick,
 } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, confidenceToLabel, confidenceToRange } from '@/lib/utils';
 import { seededRandom, stringToSeed } from '@/lib/utils';
 
 interface OctopusPredictorProps {
@@ -333,6 +333,8 @@ function RevealedState({
   compact: boolean;
 }) {
   const confidencePct = Math.round(prediction.confidence * 100);
+  const confidenceLabel = confidenceToLabel(prediction.confidence);
+  const confidenceRange = confidenceToRange(prediction.confidence);
   const hasResult = actual !== null;
   const isCorrect = hasResult ? prediction.pick === actual : null;
 
@@ -413,14 +415,16 @@ function RevealedState({
               {prediction.pickedTeamName}
             </motion.span>
             <motion.span
-              className="ml-auto rounded-full bg-cyan-500/20 px-2 py-0.5 font-mono text-[10px] font-medium text-cyan-200"
+              className="ml-auto rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-medium text-cyan-200"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', delay: 0.2 }}
+              title={`模型機率 ${confidencePct}%`}
             >
-              {confidencePct}%
+              {confidenceLabel}
             </motion.span>
           </div>
+          <p className="mt-1 text-[10px] text-slate-400">信心區間：{confidenceRange}</p>
         </div>
       </div>
 

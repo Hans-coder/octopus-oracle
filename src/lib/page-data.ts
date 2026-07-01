@@ -10,7 +10,7 @@ import { getMatches } from './football-api';
 import { getOddsForMatches, oddsToMap } from './lottery-scraper';
 import { getMatchStatsMap } from './team-stats';
 import { getLLMAnalysisMap, debugCurrentProvider } from './llm-analyst';
-import { calculateAccuracy, predictAll } from './octopus';
+import { calculateAccuracy, predictAll, predictOddsBaseline } from './octopus';
 import {
   getPredictionHistoryMap,
   persistMissingPredictionSnapshots,
@@ -30,6 +30,7 @@ export interface AggregatedData {
   predictions: Map<string, Prediction>;
   accuracy: AccuracyBucket;
   recentAccuracy: AccuracyBucket;
+  oddsBaselineAccuracy: AccuracyBucket;
   llmProvider: 'disabled' | 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
 }
 
@@ -48,6 +49,7 @@ export async function getAggregatedData(): Promise<AggregatedData> {
   const oddsMap = oddsToMap(odds);
   const llmMap = await getLLMAnalysisMap(matches, oddsMap, statsMap);
   const freshPredictions = predictAll(matches, oddsMap, statsMap, llmMap);
+  const oddsBaselinePredictions = predictOddsBaseline(matches, oddsMap);
   const historyPredictions = await getPredictionHistoryMap(matches);
 
   // Save first-seen predictions to preserve historical hit-rate across deployments.
@@ -82,6 +84,7 @@ export async function getAggregatedData(): Promise<AggregatedData> {
     correct: recentHistoricalAccuracy.correct,
     accuracy: recentHistoricalAccuracy.accuracy,
   };
+  const oddsBaselineAccuracy = calculateAccuracy(oddsBaselinePredictions, matches);
 
   return {
     matches,
@@ -91,6 +94,7 @@ export async function getAggregatedData(): Promise<AggregatedData> {
     predictions,
     accuracy,
     recentAccuracy,
+    oddsBaselineAccuracy,
     llmProvider: debugCurrentProvider(),
   };
 }

@@ -12,6 +12,7 @@ import type {
   PredictionResult,
   ProbabilityTriple,
   CalibratedMetrics,
+  MatchStage,
 } from '@/types';
 import {
   btts as bttsModel,
@@ -40,6 +41,14 @@ import { seededRandom, stringToSeed } from './utils';
 const HOME_ADVANTAGE = 0.04;
 const DRAW_SUPPRESSION = 0.85;
 const PAUL_CHAOS = 0.12;
+
+type StageWeights = {
+  odds: number;
+  elo: number;
+  form: number;
+  llm: number;
+  calibrationBlend: number;
+};
 
 // ─────────────────────────────────────────────
 // 引擎 metadata（保留單一角色 metadata，UI 用）
@@ -131,6 +140,37 @@ function chaosBlend(p: ProbabilityTriple, chaos: number): ProbabilityTriple {
     draw: p.draw * (1 - chaos) + u * chaos,
     away: p.away * (1 - chaos) + u * chaos,
   };
+}
+
+function getStageWeights(stage: MatchStage, hasLlm: boolean): StageWeights {
+  switch (stage) {
+    case 'GROUP_STAGE':
+      return hasLlm
+        ? { odds: 0.45, elo: 0.22, form: 0.23, llm: 0.1, calibrationBlend: 0.08 }
+        : { odds: 0.5, elo: 0.25, form: 0.25, llm: 0, calibrationBlend: 0.08 };
+    case 'LAST_32':
+    case 'LAST_16':
+    case 'QUARTER_FINALS':
+    case 'SEMI_FINALS':
+    case 'THIRD_PLACE':
+    case 'FINAL':
+      return hasLlm
+        ? { odds: 0.48, elo: 0.27, form: 0.15, llm: 0.1, calibrationBlend: 0.12 }
+        : { odds: 0.52, elo: 0.33, form: 0.15, llm: 0, calibrationBlend: 0.12 };
+    default:
+      return hasLlm
+        ? { odds: 0.5, elo: 0.25, form: 0.15, llm: 0.1, calibrationBlend: 0.1 }
+        : { odds: 0.55, elo: 0.3, form: 0.15, llm: 0, calibrationBlend: 0.1 };
+  }
+}
+
+function calibrateProbs(p: ProbabilityTriple, blend: number): ProbabilityTriple {
+  const u = 1 / 3;
+  return normalize({
+    home: p.home * (1 - blend) + u * blend,
+    draw: p.draw * (1 - blend) + u * blend,
+    away: p.away * (1 - blend) + u * blend,
+  });
 }
 
 function argmax(
@@ -316,27 +356,32 @@ function paulReasoning(seed: number, teamName: string, isDraw: boolean) {
 export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
   const seed = stringToSeed(`paul-the-octopus::${match.id}`);
   const rng = seededRandom(seed);
+  const hasLlm = !!ctx.llm;
+  const weights = getStageWeights(match.stage, hasLlm);
 
   const oddsP = ctx.odds ? oddsToProbs(ctx.odds) : ctx.stats.eloProbs;
 
   let base: ProbabilityTriple;
   if (ctx.llm) {
     base = combine(
-      { probs: oddsP, weight: 0.5 },
-      { probs: ctx.stats.eloProbs, weight: 0.25 },
-      { probs: formProbs(ctx.stats), weight: 0.15 },
-      { probs: ctx.llm.probs, weight: 0.1 },
+      { probs: oddsP, weight: weights.odds },
+      { probs: ctx.stats.eloProbs, weight: weights.elo },
+      { probs: formProbs(ctx.stats), weight: weights.form },
+      { probs: ctx.llm.probs, weight: weights.llm },
     );
   } else {
     base = combine(
-      { probs: oddsP, weight: 0.55 },
-      { probs: ctx.stats.eloProbs, weight: 0.3 },
-      { probs: formProbs(ctx.stats), weight: 0.15 },
+      { probs: oddsP, weight: weights.odds },
+      { probs: ctx.stats.eloProbs, weight: weights.elo },
+      { probs: formProbs(ctx.stats), weight: weights.form },
     );
   }
 
   const adjusted = applyAdjustments(base, isHomeNation(match));
-  const final = chaosBlend(adjusted, PAUL_CHAOS);
+  const final = calibrateProbs(
+    chaosBlend(adjusted, PAUL_CHAOS),
+    weights.calibrationBlend,
+  );
   const { pick, confidence } = argmax(final, rng);
 
   let pickedTeamName: string;
@@ -375,6 +420,53 @@ export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
     source,
     extras: computeMarketExtras(match, ctx, rng),
   };
+}
+
+export function predictOddsBaseline(
+  matches: Match[],
+  oddsMap: Map<string, Odds>,
+): Map<string, Prediction> {
+  const result = new Map<string, Prediction>();
+
+  for (const match of matches) {
+    const odds = oddsMap.get(match.id);
+    if (!odds) continue;
+
+    const probs = oddsToProbs(odds);
+    const pick: PredictionPick =
+      probs.home >= probs.draw && probs.home >= probs.away
+        ? 'HOME'
+        : probs.away >= probs.draw
+          ? 'AWAY'
+          : 'DRAW';
+
+    const pickedTeamName =
+      pick === 'HOME'
+        ? match.homeTeam.name
+        : pick === 'AWAY'
+          ? match.awayTeam.name
+          : '和局';
+    const pickedTeamFlag =
+      pick === 'HOME'
+        ? match.homeTeam.flag
+        : pick === 'AWAY'
+          ? match.awayTeam.flag
+          : '🤝';
+
+    result.set(match.id, {
+      matchId: match.id,
+      engine: 'paul',
+      pick,
+      confidence:
+        pick === 'HOME' ? probs.home : pick === 'AWAY' ? probs.away : probs.draw,
+      probs,
+      reasoning: '純盤口基準模型',
+      pickedTeamName,
+      pickedTeamFlag,
+    });
+  }
+
+  return result;
 }
 
 /** 批次預測 */

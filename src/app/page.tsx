@@ -16,7 +16,15 @@ const MODEL_VERSION = 'v1.0';
 const SHOW_AI_STATUS = process.env.NEXT_PUBLIC_SHOW_AI_STATUS === 'true';
 
 export default async function Dashboard() {
-  const { matches, oddsMap, predictions, accuracy, recentAccuracy, llmProvider } =
+  const {
+    matches,
+    oddsMap,
+    predictions,
+    accuracy,
+    recentAccuracy,
+    oddsBaselineAccuracy,
+    llmProvider,
+  } =
     await getAggregatedData();
 
   const todayMatches = matches
@@ -40,6 +48,10 @@ export default async function Dashboard() {
     recentAccuracy.evaluated < MIN_EVALUATED
       ? '—'
       : `${Math.round(recentAccuracy.accuracy * 100)}%`;
+  const baselineDeltaLabel =
+    oddsBaselineAccuracy.evaluated > 0
+      ? `${((accuracy.accuracy - oddsBaselineAccuracy.accuracy) * 100).toFixed(1)}pp vs 純盤口`
+      : '純盤口基準樣本累積中';
 
   const latestOddsUpdatedAt = Array.from(oddsMap.values()).reduce<string | null>(
     (latest, o) => {
@@ -80,6 +92,9 @@ export default async function Dashboard() {
                   更新：{formatTaiwanTime(latestOddsUpdatedAt)}
                 </span>
               )}
+              <span className="rounded-full border border-violet-500/40 bg-violet-500/10 px-2 py-1 text-violet-200">
+                {baselineDeltaLabel}
+              </span>
             </div>
             <SupportCard className="mt-4 max-w-xl" />
           </div>

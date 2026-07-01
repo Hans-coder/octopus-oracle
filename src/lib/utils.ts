@@ -106,3 +106,17 @@ export function statusToChinese(status: string): string {
   };
   return map[status] ?? status;
 }
+
+export function confidenceToLabel(confidence: number): string {
+  if (confidence >= 0.72) return '高信心';
+  if (confidence >= 0.56) return '中等信心';
+  if (confidence >= 0.45) return '保守觀點';
+  return '審慎觀望';
+}
+
+export function confidenceToRange(confidence: number): string {
+  if (confidence >= 0.72) return '72%+';
+  if (confidence >= 0.56) return '56-71%';
+  if (confidence >= 0.45) return '45-55%';
+  return '<45%';
+}
