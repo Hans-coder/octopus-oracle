@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { getAggregatedData } from '@/lib/page-data';
-import { isToday, isPast } from '@/lib/utils';
+import { isToday, isPast, formatTaiwanTime } from '@/lib/utils';
+import { ENGINE } from '@/lib/octopus';
 import MatchCard from '@/components/MatchCard';
 import StatCard from '@/components/StatCard';
 import AdBanner from '@/components/AdBanner';
@@ -11,6 +12,7 @@ import TodayDateHint from '@/components/TodayDateHint';
 export const revalidate = 300;
 
 const MIN_EVALUATED = 5;
+const MODEL_VERSION = 'v1.0';
 
 export default async function Dashboard() {
   const { matches, oddsMap, predictions, accuracy, llmProvider } =
@@ -34,6 +36,19 @@ export default async function Dashboard() {
       ? `樣本不足 ${accuracy.evaluated}/${MIN_EVALUATED} 場`
       : `${accuracy.correct} / ${accuracy.evaluated} 場命中`;
 
+  const latestOddsUpdatedAt = Array.from(oddsMap.values()).reduce<string | null>(
+    (latest, o) => {
+      if (!latest) return o.updatedAt;
+      return new Date(o.updatedAt).getTime() > new Date(latest).getTime()
+        ? o.updatedAt
+        : latest;
+    },
+    null,
+  );
+
+  const aiStatusLabel =
+    llmProvider === 'disabled' ? 'AI: OFF' : `AI: ON (${llmProvider.toUpperCase()})`;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <section className="overflow-hidden rounded-3xl border-2 border-cyan-500 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 p-6 shadow-lg sm:p-8 cyber-glow">
@@ -46,6 +61,19 @@ export default async function Dashboard() {
             <p className="mt-3 text-sm text-slate-300 sm:text-base leading-relaxed">
               用數據和直覺預測比賽結果。我們融合賠率、Elo 等級、近期狀態，搭配選擇性 AI 分析，提供可信的預測。
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2 py-1 font-semibold text-cyan-200">
+                {ENGINE.name} {MODEL_VERSION}
+              </span>
+              <span className="rounded-full border border-slate-500/40 bg-slate-700/40 px-2 py-1 text-slate-200">
+                {aiStatusLabel}
+              </span>
+              {latestOddsUpdatedAt && (
+                <span className="rounded-full border border-slate-500/40 bg-slate-700/40 px-2 py-1 text-slate-300">
+                  更新：{formatTaiwanTime(latestOddsUpdatedAt)}
+                </span>
+              )}
+            </div>
             <SupportCard className="mt-4 max-w-xl" />
           </div>
           <div className="hidden sm:block text-8xl opacity-20 flex-shrink-0">🐙</div>
