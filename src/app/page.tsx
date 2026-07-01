@@ -13,6 +13,7 @@ export const revalidate = 300;
 
 const MIN_EVALUATED = 5;
 const MODEL_VERSION = 'v1.0';
+const SHOW_AI_STATUS = process.env.NEXT_PUBLIC_SHOW_AI_STATUS === 'true';
 
 export default async function Dashboard() {
   const { matches, oddsMap, predictions, accuracy, recentAccuracy, llmProvider } =
@@ -69,9 +70,11 @@ export default async function Dashboard() {
               <span className="rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2 py-1 font-semibold text-cyan-200">
                 {ENGINE.name} {MODEL_VERSION}
               </span>
-              <span className="rounded-full border border-slate-500/40 bg-slate-700/40 px-2 py-1 text-slate-200">
-                {aiStatusLabel}
-              </span>
+              {SHOW_AI_STATUS && (
+                <span className="rounded-full border border-slate-500/40 bg-slate-700/40 px-2 py-1 text-slate-200">
+                  {aiStatusLabel}
+                </span>
+              )}
               {latestOddsUpdatedAt && (
                 <span className="rounded-full border border-slate-500/40 bg-slate-700/40 px-2 py-1 text-slate-300">
                   更新：{formatTaiwanTime(latestOddsUpdatedAt)}
