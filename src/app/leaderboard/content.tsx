@@ -16,16 +16,24 @@ interface LeaderboardContentProps {
       logLoss: number;
     };
   };
+  recentAccuracy: {
+    total: number;
+    evaluated: number;
+    correct: number;
+    accuracy: number;
+  };
   engineName: string;
   minEvaluated: number;
 }
 
 export function LeaderboardContent({
   accuracy,
+  recentAccuracy,
   engineName,
   minEvaluated,
 }: LeaderboardContentProps) {
   const hasEnough = accuracy.evaluated >= minEvaluated;
+  const hasEnoughRecent = recentAccuracy.evaluated >= minEvaluated;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -59,6 +67,16 @@ export function LeaderboardContent({
             <p className="mt-1 text-2xl font-bold text-cyan-300">{accuracy.evaluated}</p>
             <p className="text-xs text-slate-400">已完成評估</p>
           </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-violet-500/40 bg-violet-900/20 px-4 py-3">
+          <p className="text-xs font-medium text-violet-300">近期 30 場準確率</p>
+          <p className="mt-1 text-2xl font-bold text-violet-200">
+            {hasEnoughRecent ? `${Math.round(recentAccuracy.accuracy * 100)}%` : '—'}
+          </p>
+          <p className="text-xs text-violet-200/80">
+            {recentAccuracy.correct} / {recentAccuracy.evaluated} 場命中
+          </p>
         </div>
 
         {accuracy.calibration && hasEnough && (

@@ -18,6 +18,7 @@ import {
 import {
   persistAccuracyRecords,
   calculateHistoricalAccuracy,
+  calculateRecentHistoricalAccuracy,
 } from './accuracy-history';
 
 /** 一次拉滿所有 server 端需要的資料 */
@@ -28,6 +29,7 @@ export interface AggregatedData {
   llmMap: Map<string, LLMAnalysis>;
   predictions: Map<string, Prediction>;
   accuracy: AccuracyBucket;
+  recentAccuracy: AccuracyBucket;
   llmProvider: 'disabled' | 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
 }
 
@@ -67,11 +69,18 @@ export async function getAggregatedData(): Promise<AggregatedData> {
 
   // Calculate accuracy from full historical records, not just current API results
   const historicalAccuracy = await calculateHistoricalAccuracy();
+  const recentHistoricalAccuracy = await calculateRecentHistoricalAccuracy(30);
   const accuracy: AccuracyBucket = {
     total: historicalAccuracy.total,
     evaluated: historicalAccuracy.evaluated,
     correct: historicalAccuracy.correct,
     accuracy: historicalAccuracy.accuracy,
+  };
+  const recentAccuracy: AccuracyBucket = {
+    total: recentHistoricalAccuracy.total,
+    evaluated: recentHistoricalAccuracy.evaluated,
+    correct: recentHistoricalAccuracy.correct,
+    accuracy: recentHistoricalAccuracy.accuracy,
   };
 
   return {
@@ -81,6 +90,7 @@ export async function getAggregatedData(): Promise<AggregatedData> {
     llmMap,
     predictions,
     accuracy,
+    recentAccuracy,
     llmProvider: debugCurrentProvider(),
   };
 }

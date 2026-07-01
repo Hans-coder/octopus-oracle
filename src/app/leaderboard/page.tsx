@@ -7,11 +7,12 @@ export const revalidate = 300;
 const MIN_EVALUATED = 5;
 
 export default async function LeaderboardPage() {
-  const { accuracy } = await getAggregatedData();
+  const { accuracy, recentAccuracy } = await getAggregatedData();
 
   return (
     <LeaderboardContent
       accuracy={accuracy}
+      recentAccuracy={recentAccuracy}
       engineName={ENGINE.name}
       minEvaluated={MIN_EVALUATED}
     />

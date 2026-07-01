@@ -15,7 +15,7 @@ const MIN_EVALUATED = 5;
 const MODEL_VERSION = 'v1.0';
 
 export default async function Dashboard() {
-  const { matches, oddsMap, predictions, accuracy, llmProvider } =
+  const { matches, oddsMap, predictions, accuracy, recentAccuracy, llmProvider } =
     await getAggregatedData();
 
   const todayMatches = matches
@@ -35,6 +35,10 @@ export default async function Dashboard() {
     accuracy.evaluated < MIN_EVALUATED
       ? `樣本不足 ${accuracy.evaluated}/${MIN_EVALUATED} 場`
       : `${accuracy.correct} / ${accuracy.evaluated} 場命中`;
+  const recentAccuracyLabel =
+    recentAccuracy.evaluated < MIN_EVALUATED
+      ? '—'
+      : `${Math.round(recentAccuracy.accuracy * 100)}%`;
 
   const latestOddsUpdatedAt = Array.from(oddsMap.values()).reduce<string | null>(
     (latest, o) => {
@@ -98,7 +102,7 @@ export default async function Dashboard() {
         <Link href="/leaderboard" className="block transform transition hover:scale-105" aria-label="查看準確率">
           <StatCard
             icon="🎯"
-            label="準確率"
+            label="歷史準確率"
             value={accuracyLabel}
             hint={accuracyHint}
             accent="blue"
@@ -106,9 +110,9 @@ export default async function Dashboard() {
         </Link>
         <StatCard
           icon="⏱"
-          label="即將開賽"
-          value={upcomingMatches.length}
-          hint="未來 7 天"
+          label="近期 30 場"
+          value={recentAccuracyLabel}
+          hint={`${recentAccuracy.correct} / ${recentAccuracy.evaluated} 場命中`}
           accent="purple"
         />
       </section>

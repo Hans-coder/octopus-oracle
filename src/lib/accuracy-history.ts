@@ -103,6 +103,35 @@ export async function calculateHistoricalAccuracy(): Promise<{
   };
 }
 
+/** 從最新往回取 N 場已評估比賽，計算近期準確度 */
+export async function calculateRecentHistoricalAccuracy(
+  limit = 30,
+): Promise<{
+  total: number;
+  evaluated: number;
+  correct: number;
+  accuracy: number;
+}> {
+  const records = await getAllAccuracyHistory();
+
+  const recentEvaluated = records
+    .filter((r) => r.correct !== null)
+    .sort(
+      (a, b) =>
+        new Date(b.evaluatedAt).getTime() - new Date(a.evaluatedAt).getTime(),
+    )
+    .slice(0, Math.max(1, limit));
+
+  const correct = recentEvaluated.filter((r) => r.correct === true).length;
+
+  return {
+    total: recentEvaluated.length,
+    evaluated: recentEvaluated.length,
+    correct,
+    accuracy: recentEvaluated.length === 0 ? 0 : correct / recentEvaluated.length,
+  };
+}
+
 /** 回溯載入所有預測快照的結果進歷史表 */
 export async function backfillAccuracyHistoryFromSnapshots(): Promise<{
   processed: number;
