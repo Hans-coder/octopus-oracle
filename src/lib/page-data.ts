@@ -8,6 +8,7 @@ import type {
 } from '@/types';
 import { getMatches } from './football-api';
 import { getOddsForMatches, oddsToMap } from './lottery-scraper';
+import { attachOddsTrends, persistOddsSnapshots } from './odds-history';
 import { getMatchStatsMap } from './team-stats';
 import { getLLMAnalysisMap, debugCurrentProvider } from './llm-analyst';
 import { calculateAccuracy, predictAll, predictOddsBaseline } from './octopus';
@@ -20,6 +21,7 @@ import {
   calculateHistoricalAccuracy,
   calculateRecentHistoricalAccuracy,
 } from './accuracy-history';
+import { persistPredictionComparisonRecords } from './prediction-comparison-history';
 
 /** 一次拉滿所有 server 端需要的資料 */
 export interface AggregatedData {
@@ -46,7 +48,9 @@ export async function getAggregatedData(): Promise<AggregatedData> {
     getOddsForMatches(matches),
     Promise.resolve(getMatchStatsMap(matches)),
   ]);
-  const oddsMap = oddsToMap(odds);
+  const oddsMapRaw = oddsToMap(odds);
+  const oddsMap = await attachOddsTrends(oddsMapRaw);
+  await persistOddsSnapshots(oddsMap);
   const llmMap = await getLLMAnalysisMap(matches, oddsMap, statsMap);
   const freshPredictions = predictAll(matches, oddsMap, statsMap, llmMap);
   const oddsBaselinePredictions = predictOddsBaseline(matches, oddsMap);
@@ -57,6 +61,7 @@ export async function getAggregatedData(): Promise<AggregatedData> {
 
   // Persist accuracy records for finished matches to preserve stats
   await persistAccuracyRecords(matches, freshPredictions);
+  await persistPredictionComparisonRecords(matches, oddsMap, statsMap, llmMap);
 
   const isPlaceholderPrediction = (pred: Prediction) =>
     pred.pickedTeamName === '待定' ||

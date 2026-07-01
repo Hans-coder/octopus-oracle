@@ -54,10 +54,19 @@ export interface Odds {
   homeWin: number;   // 主勝賠率
   draw: number;      // 和局賠率
   awayWin: number;   // 客勝賠率
+  trend?: OddsTrend;
   /** 衡生玩法（大小分 / 雙方均得分 / 上半場 / 總進球數 / 波膽 / 讓分盤） */
   markets?: ExtraMarkets;
   source: string;    // 資料來源（例「章魚推算盤」）
   updatedAt: string; // ISO timestamp
+}
+
+export interface OddsTrend {
+  favoredSide: PredictionPick | 'EVEN';
+  movement: number;
+  summary: string;
+  previousUpdatedAt?: string;
+  currentUpdatedAt?: string;
 }
 
 /** 大小（總進球 over/under line） */

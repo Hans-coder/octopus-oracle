@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAggregatedData } from '@/lib/page-data';
+import { getPredictionComparisonSummary } from '@/lib/prediction-comparison-history';
 
 /**
  * GET /api/metrics
@@ -13,6 +14,7 @@ import { getAggregatedData } from '@/lib/page-data';
 export async function GET() {
   try {
     const { matches, predictions, accuracy, llmProvider } = await getAggregatedData();
+    const comparison = await getPredictionComparisonSummary();
 
     const finishedMatches = matches.filter(
       (m) => m.status === 'FINISHED' && m.score?.winner && !m.isFriendly,
@@ -28,6 +30,7 @@ export async function GET() {
           total: accuracy.total,
         },
         calibration: accuracy.calibration,
+        aiComparison: comparison,
         sampleSize: finishedMatches.length,
         llmProvider,
         timestamp: new Date().toISOString(),

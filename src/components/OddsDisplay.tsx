@@ -126,6 +126,11 @@ export default function OddsDisplay({
         {isMock && '⚠️ '}
         資料來源：{odds.source}
       </p>
+      {odds.trend && (
+        <p className="text-center text-[10px] text-cyan-300/80">
+          盤勢方向：{odds.trend.summary}
+        </p>
+      )}
     </div>
   );
 }
