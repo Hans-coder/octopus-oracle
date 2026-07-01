@@ -12,7 +12,7 @@ export default function ContactPage() {
           若你對網站內容、技術合作、資料授權、廣告合作或贊助方案有疑問，歡迎來信洽詢。
         </p>
         <div className="rounded-2xl border border-slate-700 bg-slate-900/50 p-4">
-          <p><span className="font-semibold text-white">Email：</span> contact@octopusoracle.app</p>
+          <p><span className="font-semibold text-white">Email：</span> mon850927@gmail.com</p>
           <p className="mt-2"><span className="font-semibold text-white">服務類型：</span> 體育數據網站、預測工具、網頁與 App 開發服務</p>
           <p className="mt-2"><span className="font-semibold text-white">回覆時間：</span> 一般於 3 個工作天內回覆</p>
         </div>
