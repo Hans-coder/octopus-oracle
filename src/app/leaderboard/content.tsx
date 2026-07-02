@@ -146,6 +146,18 @@ export function LeaderboardContent({
         </div>
       )}
 
+      <section className="mb-8 rounded-2xl border border-slate-700 bg-slate-900/40 p-4 sm:p-5">
+        <h2 className="text-lg font-semibold text-cyan-300">如何解讀這個頁面</h2>
+        <div className="mt-2 space-y-2 text-sm leading-7 text-slate-300">
+          <p>
+            單看命中率容易誤判模型品質，所以這裡同時放入近期樣本、歷史樣本與盤口基準。若模型只是偶然連中幾場，通常在長期樣本或校正指標上會露出差異。
+          </p>
+          <p>
+            這個頁面保留命中與失誤紀錄，不只展示好看的結果。你可以直接往下看每一筆賽後紀錄，判斷模型在哪些比賽類型表現較穩定、哪些場景仍需要保守解讀。
+          </p>
+        </div>
+      </section>
+
       <section>
         <h2 className="mb-4 text-xl font-bold text-cyan-300 flex items-center gap-2">
           <span>📋</span> 預測紀錄
