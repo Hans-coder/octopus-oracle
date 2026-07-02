@@ -202,6 +202,42 @@ export default async function Dashboard() {
         </section>
       )}
 
+      <section className="mt-10 rounded-3xl border border-slate-700 bg-slate-900/40 p-5 sm:p-6">
+        <h2 className="text-xl font-bold text-cyan-300">資料來源與模型摘要</h2>
+        <p className="mt-2 text-sm leading-7 text-slate-300">
+          本站每一場預測都來自同一套可追蹤流程：先整合賽程與盤口資訊，再以 Elo 與近期狀態修正，最後輸出機率與信心分級。
+          我們同時公開歷史表現、近期樣本與純盤口基準比較，避免只展示對模型有利的片段。
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-700/70 bg-slate-800/60 p-3">
+            <p className="text-xs font-semibold text-cyan-300">可檢查</p>
+            <p className="mt-1 text-xs leading-6 text-slate-300">每場預測與後續賽果可回看，並累積在準確率頁面。</p>
+          </div>
+          <div className="rounded-xl border border-slate-700/70 bg-slate-800/60 p-3">
+            <p className="text-xs font-semibold text-cyan-300">可比較</p>
+            <p className="mt-1 text-xs leading-6 text-slate-300">除模型表現外，也公開純盤口基準，檢查是否真的有額外價值。</p>
+          </div>
+          <div className="rounded-xl border border-slate-700/70 bg-slate-800/60 p-3">
+            <p className="text-xs font-semibold text-cyan-300">可追溯</p>
+            <p className="mt-1 text-xs leading-6 text-slate-300">顯示模型版本與最近更新時間，降低內容過時與資訊不對稱。</p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs">
+          <Link href="/methodology" className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 font-medium text-cyan-200 hover:bg-cyan-500/20">
+            查看模型方法論
+          </Link>
+          <Link href="/about" className="rounded-lg border border-slate-500/40 bg-slate-700/40 px-3 py-1.5 font-medium text-slate-200 hover:bg-slate-700/60">
+            查看關於本站
+          </Link>
+          <Link href="/editorial-policy" className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 font-medium text-amber-200 hover:bg-amber-500/20">
+            查看編輯政策
+          </Link>
+          <Link href="/faq" className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 font-medium text-emerald-200 hover:bg-emerald-500/20">
+            查看常見問題
+          </Link>
+        </div>
+      </section>
+
       <AdBanner className="mt-8" label="更多優惠" />
 
     </div>

@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
-import AdSenseLoader from '@/components/AdSenseLoader';
 import './globals.css';
 
 
@@ -36,13 +35,22 @@ export default function RootLayout({
       lang="zh-Hant"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4662523495462452"
+          crossOrigin="anonymous"
+        ></script>
+      </head>
       <body className="min-h-full flex flex-col">
-        {/* AdSense: useEffect 動態插入，無 data-nscript，無 SSR 衝突 */}
-        <AdSenseLoader />
         <Navigation />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-slate-700/40 bg-slate-900/30 px-4 py-4 text-center text-xs text-slate-400">
           <div className="mb-3 flex items-center justify-center gap-4 text-sm">
+            <Link href="/methodology" className="text-slate-300 transition hover:text-cyan-300">模型方法論</Link>
+            <Link href="/about" className="text-slate-300 transition hover:text-cyan-300">關於本站</Link>
+            <Link href="/editorial-policy" className="text-slate-300 transition hover:text-cyan-300">編輯政策</Link>
+            <Link href="/faq" className="text-slate-300 transition hover:text-cyan-300">FAQ</Link>
             <Link href="/privacy" className="text-slate-300 transition hover:text-cyan-300">隱私權政策</Link>
             <Link href="/contact" className="text-slate-300 transition hover:text-cyan-300">聯絡我們</Link>
           </div>

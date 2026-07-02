@@ -1,10 +1,12 @@
 import Link from 'next/link';
-import { Home, CalendarDays, BarChart3, ExternalLink } from 'lucide-react';
+import { Home, CalendarDays, BarChart3, BookOpen, Info, ExternalLink } from 'lucide-react';
 
 const links = [
   { href: '/', label: '首頁', icon: Home },
   { href: '/matches', label: '賽程', icon: CalendarDays },
   { href: '/leaderboard', label: '準確率', icon: BarChart3 },
+  { href: '/methodology', label: '方法論', icon: BookOpen },
+  { href: '/about', label: '關於', icon: Info },
 ];
 
 export default function Navigation() {
