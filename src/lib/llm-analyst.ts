@@ -138,7 +138,7 @@ function cacheKey(
     oddsSignature(odds),
     statsSignature(stats),
   ].join('::');
-  return `llm:v2:${stringToSeed(raw)}`;
+  return `llm:v3:${stringToSeed(raw)}`;
 }
 
 function isFresh(analysis: LLMAnalysis, ttlSec: number): boolean {

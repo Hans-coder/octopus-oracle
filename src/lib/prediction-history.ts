@@ -9,7 +9,7 @@ interface StoredPredictionSnapshot {
 }
 
 function historyKey(matchId: string): string {
-  return `pred:history:v2:${matchId}`;
+  return `pred:history:v3:${matchId}`;
 }
 
 function isValidPrediction(input: unknown): input is Prediction {
