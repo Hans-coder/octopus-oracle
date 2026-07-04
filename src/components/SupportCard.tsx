@@ -16,7 +16,9 @@ const SUPPORT_URL_120 =
 const SUPPORT_URL_300 =
   process.env.NEXT_PUBLIC_SUPPORT_URL_300 ??
   'https://www.paypal.com/ncp/payment/Z4MJ5H4FVT4MJ';
-const SUPPORT_URL_FREE = process.env.NEXT_PUBLIC_SUPPORT_URL_FREE ?? '';
+const SUPPORT_URL_FREE =
+  process.env.NEXT_PUBLIC_SUPPORT_URL_FREE ??
+  'https://www.paypal.com/ncp/payment/6ZQLBUR9VTV3J';
 
 export default function SupportCard({ className = '' }: SupportCardProps) {
   const [burstKey, setBurstKey] = useState(0);
@@ -43,7 +45,7 @@ export default function SupportCard({ className = '' }: SupportCardProps) {
     { amount: 300, url: SUPPORT_URL_300, label: 'NT$300' },
     {
       amount: '自由贊助',
-      url: SUPPORT_URL_FREE || SUPPORT_URL_120,
+      url: SUPPORT_URL_FREE,
       label: '自由贊助',
     },
   ];
@@ -90,11 +92,7 @@ export default function SupportCard({ className = '' }: SupportCardProps) {
         ))}
       </div>
 
-      {!SUPPORT_URL_FREE && (
-        <p className="mt-1.5 text-[10px] text-slate-400">
-          可選填 NEXT_PUBLIC_SUPPORT_URL_FREE 作為自由贊助連結。
-        </p>
-      )}
+
     </aside>
   );
 }

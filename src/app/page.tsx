@@ -8,6 +8,7 @@ import StatCard from '@/components/StatCard';
 import AdBanner from '@/components/AdBanner';
 import SupportCard from '@/components/SupportCard';
 import TodayDateHint from '@/components/TodayDateHint';
+import ShareBar from '@/components/ShareBar';
 
 export const revalidate = 300;
 
@@ -100,6 +101,7 @@ export default async function Dashboard() {
               </span>
             </div>
             <SupportCard className="mt-4 max-w-xl" />
+            <ShareBar className="mt-3" title="章魚哥 Oracle｜2026 世界盃預測，章魚哥幫你預測誰會贏！" />
           </div>
           <div className="hidden sm:block text-8xl opacity-20 flex-shrink-0">🐙</div>
         </div>
@@ -139,6 +141,26 @@ export default async function Dashboard() {
       </section>
 
       <AdBanner className="mt-4" label="合作廣告" />
+
+      {/* 信心分級說明 */}
+      <div className="mt-4 rounded-2xl border border-slate-700/60 bg-slate-800/40 px-4 py-3">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">章魚哥信心分級說明</p>
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2.5 py-1 text-emerald-300">
+            <span className="font-bold">🟢 高信心</span>
+            <span className="text-slate-400">· 模型機率 ≥ 60%，多項指標一致</span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/40 bg-yellow-500/10 px-2.5 py-1 text-yellow-300">
+            <span className="font-bold">🟡 中信心</span>
+            <span className="text-slate-400">· 機率 45–59%，有一定把握</span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-500/40 bg-slate-700/30 px-2.5 py-1 text-slate-300">
+            <span className="font-bold">⚪ 低信心</span>
+            <span className="text-slate-400">· 機率 &lt; 45%，高度不確定</span>
+          </span>
+        </div>
+        <p className="mt-2 text-[10px] text-slate-500">⏱ 賠率與賽程資料每 5 分鐘自動更新，首頁顯示最新更新時間。</p>
+      </div>
 
       {accuracy.evaluated < MIN_EVALUATED && (
         <div className="mt-4 flex items-start gap-2 rounded-2xl border border-yellow-500/50 bg-yellow-900/20 px-4 py-3 text-xs text-yellow-400 backdrop-blur">

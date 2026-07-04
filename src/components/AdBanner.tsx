@@ -1,3 +1,5 @@
+const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === 'true';
+
 type AdBannerProps = {
   className?: string;
   label?: string;
@@ -7,6 +9,9 @@ export default function AdBanner({
   className = '',
   label = '贊助廣告',
 }: AdBannerProps) {
+  // 廣告審核中，暫時隱藏
+  if (!ADS_ENABLED) return null;
+
   return (
     <section
       aria-label={label}

@@ -28,6 +28,14 @@ body {
     linear-gradient(135deg, #0f172a 0%, #1a1f2e 50%, #0f172a 100%);
   color: var(--text);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* 手機底部 tab bar 高度預留空間 */
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 640px) {
+  body {
+    padding-bottom: 0;
+  }
 }
 
 a {
