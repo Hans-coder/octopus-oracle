@@ -73,8 +73,8 @@ export async function persistMissingPredictionSnapshots(
   const redis = getRedisClient();
   if (!redis || matches.length === 0) return;
 
-  // 60 天後自動過期（世界盃一屆約 30 天，保留雙倍緩衝）
-  const TTL_SECONDS = 60 * 24 * 60 * 60;
+  // 1 天後自動過期（短期世界盃專案，每日重新計算預測）
+  const TTL_SECONDS = 1 * 24 * 60 * 60;
 
   await Promise.all(
     matches.map(async (m) => {
