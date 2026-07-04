@@ -144,22 +144,26 @@ export default async function Dashboard() {
 
       {/* 信心分級說明 */}
       <div className="mt-4 rounded-2xl border border-slate-700/60 bg-slate-800/40 px-4 py-3">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">章魚哥信心分級說明</p>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">章魚哥信心分級說明（召喚後可見）</p>
         <div className="flex flex-wrap gap-2 text-[11px]">
+          <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2.5 py-1 text-cyan-300">
+            <span className="font-bold">🎯 主推</span>
+            <span className="text-slate-400">· 機率 ≥ 72%，章魚哥高度把握</span>
+          </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2.5 py-1 text-emerald-300">
-            <span className="font-bold">🟢 高信心</span>
-            <span className="text-slate-400">· 模型機率 ≥ 60%，多項指標一致</span>
+            <span className="font-bold">✅ 偏向</span>
+            <span className="text-slate-400">· 機率 56–71%，偏向此結果</span>
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/40 bg-yellow-500/10 px-2.5 py-1 text-yellow-300">
-            <span className="font-bold">🟡 中信心</span>
-            <span className="text-slate-400">· 機率 45–59%，有一定把握</span>
+            <span className="font-bold">⚖️ 五五波</span>
+            <span className="text-slate-400">· 機率 45–55%，難分高下</span>
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-slate-500/40 bg-slate-700/30 px-2.5 py-1 text-slate-300">
-            <span className="font-bold">⚪ 低信心</span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-rose-400/40 bg-rose-500/10 px-2.5 py-1 text-rose-300">
+            <span className="font-bold">🌀 冷門留意</span>
             <span className="text-slate-400">· 機率 &lt; 45%，高度不確定</span>
           </span>
         </div>
-        <p className="mt-2 text-[10px] text-slate-500">⏱ 賠率與賽程資料每 5 分鐘自動更新，首頁顯示最新更新時間。</p>
+        <p className="mt-2 text-[10px] text-slate-500">💡 點每張賽事卡的「召喚章魚哥」按鈕，即可看到預測結果與信心標籤。⏱ 資料每 5 分鐘自動更新。</p>
       </div>
 
       {accuracy.evaluated < MIN_EVALUATED && (

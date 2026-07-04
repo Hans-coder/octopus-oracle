@@ -84,7 +84,7 @@ export default function OctopusPredictor({
 
       <AnimatePresence mode="wait">
         {displayPhase === 'idle' && (
-          <IdleState key="idle" onReveal={handleReveal} hasMatch={!!match} />
+          <IdleState key="idle" onReveal={handleReveal} hasMatch={!!match} prediction={prediction} />
         )}
         {displayPhase === 'revealing' && match && (
           <RevealingState
@@ -143,10 +143,22 @@ function BubbleBackground() {
 function IdleState({
   onReveal,
   hasMatch,
+  prediction,
 }: {
   onReveal: () => void;
   hasMatch: boolean;
+  prediction: import('@/types').Prediction;
 }) {
+  const confidenceLabel = confidenceToLabel(prediction.confidence);
+  const labelColor =
+    prediction.confidence >= 0.72
+      ? 'text-cyan-300 border-cyan-400/40 bg-cyan-500/10'
+      : prediction.confidence >= 0.56
+        ? 'text-emerald-300 border-emerald-400/40 bg-emerald-500/10'
+        : prediction.confidence >= 0.45
+          ? 'text-yellow-300 border-yellow-400/40 bg-yellow-500/10'
+          : 'text-rose-300 border-rose-400/40 bg-rose-500/10';
+
   return (
     <motion.div
       className="relative flex flex-col items-center justify-center gap-3 py-1"
@@ -172,8 +184,17 @@ function IdleState({
           <Sparkles className="h-3 w-3" />
           章魚哥神諭
         </div>
-        <div className="mt-0.5 text-xs text-slate-400">
-          {hasMatch ? '尚未揭曉，輕觸召喚' : '預測中…'}
+        {/* 信心預告（模糊遮罩，召喚後才完整顯示） */}
+        {hasMatch && (
+          <div className="mt-1.5 flex items-center justify-center gap-1.5">
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold blur-[3px] select-none ${labelColor}`}>
+              {confidenceLabel}
+            </span>
+            <span className="text-[9px] text-slate-500">召喚後揭曉</span>
+          </div>
+        )}
+        <div className="mt-1 text-xs text-slate-400">
+          {hasMatch ? '輕觸召喚章魚哥' : '預測中…'}
         </div>
       </div>
 
