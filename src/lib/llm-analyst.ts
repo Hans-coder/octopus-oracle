@@ -252,11 +252,12 @@ async function callOpenAI(prompt: string): Promise<string | null> {
     };
     return data.choices?.[0]?.message?.content ?? null;
   } catch (err) {
-    // Next.js 靜態生成期間會丟 "Dynamic server usage" 例外，屬預期行為，不需 error log
+    // Next.js 靜態生成期間會丟 "Dynamic server usage" 例外，屬預期行為，必須重新丟出以讓 Next.js 處理
     const msg = err instanceof Error ? err.message : String(err);
-    if (!msg.includes('Dynamic server usage')) {
-      console.error('[llm] openai exception', err);
+    if (msg.includes('Dynamic server usage')) {
+      throw err;
     }
+    console.error('[llm] openai exception', err);
     return null;
   }
 }
@@ -302,9 +303,10 @@ async function callAnthropic(prompt: string): Promise<string | null> {
     return textBlock?.text ?? null;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (!msg.includes('Dynamic server usage')) {
-      console.error('[llm] anthropic exception', err);
+    if (msg.includes('Dynamic server usage')) {
+      throw err;
     }
+    console.error('[llm] anthropic exception', err);
     return null;
   }
 }
@@ -349,9 +351,10 @@ async function callGemini(prompt: string): Promise<string | null> {
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (!msg.includes('Dynamic server usage')) {
-      console.error('[llm] gemini exception', err);
+    if (msg.includes('Dynamic server usage')) {
+      throw err;
     }
+    console.error('[llm] gemini exception', err);
     return null;
   }
 }
@@ -401,9 +404,10 @@ async function callGroq(prompt: string): Promise<string | null> {
     return data.choices?.[0]?.message?.content ?? null;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (!msg.includes('Dynamic server usage')) {
-      console.error('[llm] groq exception', err);
+    if (msg.includes('Dynamic server usage')) {
+      throw err;
     }
+    console.error('[llm] groq exception', err);
     return null;
   }
 }
@@ -435,6 +439,8 @@ async function callOllama(prompt: string): Promise<string | null> {
     const data = (await res.json()) as { response?: string };
     return data.response?.trim() ?? null;
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Dynamic server usage')) throw err;
     console.error('[llm] ollama connection failed at', process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434');
     ollamaCircuitBreaker.trip();
     return null;
@@ -455,6 +461,8 @@ async function getFromCaches(key: string, ttlSec: number): Promise<LLMAnalysis |
       return remote;
     }
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Dynamic server usage')) throw err;
     console.warn('[llm] redis read failed', err);
   }
 
@@ -470,6 +478,8 @@ async function setCaches(key: string, value: LLMAnalysis, ttlSec: number): Promi
   try {
     await redis.set(key, value, { ex: ttlSec });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Dynamic server usage')) throw err;
     console.warn('[llm] redis write failed', err);
   }
 }
