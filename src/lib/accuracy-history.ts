@@ -13,7 +13,7 @@ interface AccuracyRecord {
 }
 
 function historyKey(matchId: string): string {
-  return `acc:history:v2:${matchId}`;
+  return `acc:history:v1:${matchId}`;
 }
 
 /** 從 Redis 讀已評估的全部比賽結果 */
@@ -22,7 +22,7 @@ export async function getAllAccuracyHistory(): Promise<AccuracyRecord[]> {
   if (!redis) return [];
 
   try {
-    const keys = await redis.keys('acc:history:v2:*');
+    const keys = await redis.keys('acc:history:v1:*');
     if (keys.length === 0) return [];
 
     const records = await Promise.all(
