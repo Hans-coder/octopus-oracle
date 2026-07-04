@@ -12,7 +12,7 @@ const MAX_SNAPSHOTS = 12;
 const SNAPSHOT_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
 function historyKey(matchId: string): string {
-  return `odds:history:v1:${matchId}`;
+  return `odds:history:v2:${matchId}`;
 }
 
 function implied(odds: Pick<Odds, 'homeWin' | 'draw' | 'awayWin'>) {

@@ -70,15 +70,17 @@ export default async function Dashboard() {
   const aiStatusLabel =
     llmProvider === 'disabled' ? 'AI: OFF' : `AI: ON (${llmProvider.toUpperCase()})`;
 
-  // 動態 slogan：樣本足夠就顯示真實準確率
+  // 動態 slogan：樣本足夠就顯示近10場準確率，更能吸引眼球
   const heroSlogan =
-    accuracy.evaluated >= MIN_EVALUATED
-      ? `章魚哥已預測 ${accuracy.evaluated} 場，命中率 ${Math.round(accuracy.accuracy * 100)}% — 你敢不看嗎？`
-      : '章魚哥正在感應深海能量，神諭即將降臨…';
+    recentAccuracy.evaluated >= MIN_EVALUATED
+      ? `章魚哥近 10 場預測命中率高達 ${Math.round(recentAccuracy.accuracy * 100)}% — 你敢不看嗎？`
+      : accuracy.evaluated >= MIN_EVALUATED
+        ? `章魚哥已預測 ${accuracy.evaluated} 場，命中率 ${Math.round(accuracy.accuracy * 100)}% — 你敢不看嗎？`
+        : '章魚哥正在感應深海能量，神諭即將降臨…';
 
   const shareTitle =
-    accuracy.evaluated >= MIN_EVALUATED
-      ? `🐙 章魚哥 Oracle｜2026 世界盃預測命中率 ${Math.round(accuracy.accuracy * 100)}%，你敢不看？`
+    recentAccuracy.evaluated >= MIN_EVALUATED
+      ? `🐙 章魚哥 Oracle｜近10場命中率高達 ${Math.round(recentAccuracy.accuracy * 100)}%，你敢不看？`
       : '🐙 章魚哥 Oracle｜2026 世界盃預測，章魚哥幫你預測誰會贏！';
 
   return (

@@ -14,7 +14,7 @@ interface PredictionComparisonRecord {
 }
 
 function historyKey(matchId: string): string {
-  return `pred:compare:v1:${matchId}`;
+  return `pred:compare:v2:${matchId}`;
 }
 
 export async function persistPredictionComparisonRecords(
@@ -83,7 +83,7 @@ export async function getPredictionComparisonSummary(): Promise<{
   }
 
   try {
-    const keys = await redis.keys('pred:compare:v1:*');
+    const keys = await redis.keys('pred:compare:v2:*');
     if (keys.length === 0) {
       return { total: 0, aiTracked: 0, standardAccuracy: 0, aiAccuracy: null };
     }

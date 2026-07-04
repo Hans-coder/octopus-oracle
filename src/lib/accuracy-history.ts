@@ -13,7 +13,7 @@ interface AccuracyRecord {
 }
 
 function historyKey(matchId: string): string {
-  return `acc:history:v1:${matchId}`;
+  return `acc:history:v2:${matchId}`;
 }
 
 /** 從 Redis 讀已評估的全部比賽結果 */
@@ -22,7 +22,7 @@ export async function getAllAccuracyHistory(): Promise<AccuracyRecord[]> {
   if (!redis) return [];
 
   try {
-    const keys = await redis.keys('acc:history:v1:*');
+    const keys = await redis.keys('acc:history:v2:*');
     if (keys.length === 0) return [];
 
     const records = await Promise.all(
@@ -147,7 +147,7 @@ export async function backfillAccuracyHistoryFromSnapshots(): Promise<{
 
   try {
     // 讀所有預測快照 key
-    const predKeys = await redis.keys('pred:history:v1:*');
+    const predKeys = await redis.keys('pred:history:v2:*');
     if (predKeys.length === 0) return { processed: 0, newRecords: 0, skipped: 0 };
 
     // 一次批次抓所有比賽（往前 30 天 + 往後 14 天，涵蓋完整世界杯賽期）
@@ -157,13 +157,13 @@ export async function backfillAccuracyHistoryFromSnapshots(): Promise<{
     const matchMap = new Map<string, Match>(allMatches.map((m) => [m.id, m]));
 
     // 批次讀取所有已存在的 acc 記錄（避免逐一查詢）
-    const accKeys = predKeys.map((k) => historyKey(k.replace('pred:history:v1:', '')));
+    const accKeys = predKeys.map((k) => historyKey(k.replace('pred:history:v2:', '')));
     const existingAccRecords = await Promise.all(
       accKeys.map((k) => redis.get<AccuracyRecord>(k).catch(() => null)),
     );
     const existingAccSet = new Set(
       existingAccRecords
-        .map((r, i) => (r ? predKeys[i].replace('pred:history:v1:', '') : null))
+        .map((r, i) => (r ? predKeys[i].replace('pred:history:v2:', '') : null))
         .filter((id): id is string => id !== null),
     );
 
@@ -173,7 +173,7 @@ export async function backfillAccuracyHistoryFromSnapshots(): Promise<{
     );
 
     for (let i = 0; i < predKeys.length; i++) {
-      const matchId = predKeys[i].replace('pred:history:v1:', '');
+      const matchId = predKeys[i].replace('pred:history:v2:', '');
 
       // 已有記錄就跳過
       if (existingAccSet.has(matchId)) {
@@ -283,7 +283,7 @@ export async function backfillAllFinishedMatches(
 
       await redis.set(historyKey(match.id), record);
       // 同時存預測快照（方便未來查詢）
-      await redis.set(`pred:history:v1:${match.id}`, prediction);
+      await redis.set(`pred:history:v2:${match.id}`, prediction);
       newRecords++;
     } catch {
       // Keep resilient
