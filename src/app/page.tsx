@@ -148,7 +148,7 @@ export default async function Dashboard() {
         </Link>
         <StatCard
           icon="⏱"
-          label="近期 30 場"
+          label="近期 10 場"
           value={recentAccuracyLabel}
           hint={`${recentAccuracy.correct} / ${recentAccuracy.evaluated} 場命中`}
           accent="purple"

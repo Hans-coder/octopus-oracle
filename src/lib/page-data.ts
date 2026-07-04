@@ -84,7 +84,7 @@ export async function getAggregatedData(): Promise<AggregatedData> {
 
   // Calculate accuracy from full historical records, not just current API results
   const historicalAccuracy = await calculateHistoricalAccuracy();
-  const recentHistoricalAccuracy = await calculateRecentHistoricalAccuracy(30);
+  const recentHistoricalAccuracy = await calculateRecentHistoricalAccuracy(10);
   const accuracy: AccuracyBucket = {
     total: historicalAccuracy.total,
     evaluated: historicalAccuracy.evaluated,
