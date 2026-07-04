@@ -15,12 +15,18 @@ function historyKey(matchId: string): string {
 function isValidPrediction(input: unknown): input is Prediction {
   if (!input || typeof input !== 'object') return false;
   const v = input as Partial<Prediction>;
-  return (
-    typeof v.matchId === 'string' &&
-    typeof v.pick === 'string' &&
-    typeof v.confidence === 'number' &&
-    !!v.probs
-  );
+  if (
+    typeof v.matchId !== 'string' ||
+    typeof v.pick !== 'string' ||
+    typeof v.confidence !== 'number' ||
+    !v.probs
+  ) return false;
+  // Reject if team name looks like a match ID (pure digits) or is missing
+  const name = v.pickedTeamName ?? '';
+  const flag = v.pickedTeamFlag ?? '';
+  if (!name || /^\d+$/.test(name)) return false;
+  if (!flag) return false;
+  return true;
 }
 
 export async function getPredictionHistoryMap(

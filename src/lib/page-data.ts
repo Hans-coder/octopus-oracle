@@ -63,10 +63,18 @@ export async function getAggregatedData(): Promise<AggregatedData> {
   await persistAccuracyRecords(matches, freshPredictions);
   await persistPredictionComparisonRecords(matches, oddsMap, statsMap, llmMap);
 
-  const isPlaceholderPrediction = (pred: Prediction) =>
-    pred.pickedTeamName === '待定' ||
-    pred.pickedTeamFlag === '❔' ||
-    pred.pickedTeamName === 'TBD';
+  const isPlaceholderPrediction = (pred: Prediction) => {
+    const name = pred.pickedTeamName ?? '';
+    const flag = pred.pickedTeamFlag ?? '';
+    if (name === '待定' || flag === '❔' || name === 'TBD') return true;
+    // Reject if pickedTeamName looks like a match ID (all digits/ASCII, no CJK or letters beyond 3 chars)
+    // Valid team names contain Chinese chars or multi-letter words like "Brazil", "France"
+    // Match IDs look like "320xxx", "4480xxx" (pure ASCII digits)
+    if (/^\d+$/.test(name)) return true;
+    // Reject if flag is missing or not an emoji (valid flags are flag emojis or 🤝)
+    if (!flag || flag.length === 0) return true;
+    return false;
+  };
 
   const predictions = new Map(freshPredictions);
   for (const [matchId, prediction] of historyPredictions) {
