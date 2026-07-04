@@ -73,11 +73,17 @@ export async function persistMissingPredictionSnapshots(
   const redis = getRedisClient();
   if (!redis || matches.length === 0) return;
 
+  // 60 天後自動過期（世界盃一屆約 30 天，保留雙倍緩衝）
+  const TTL_SECONDS = 60 * 24 * 60 * 60;
+
   await Promise.all(
     matches.map(async (m) => {
       if (m.isFriendly) return;
       const prediction = predictions.get(m.id);
       if (!prediction) return;
+
+      // 寫入前再次驗證，防止髒資料入庫
+      if (!isValidPrediction(prediction)) return;
 
       const key = historyKey(m.id);
       try {
@@ -91,7 +97,7 @@ export async function persistMissingPredictionSnapshots(
           kickoffAt: m.utcDate,
         };
 
-        await redis.set(key, snapshot);
+        await redis.set(key, snapshot, { ex: TTL_SECONDS });
       } catch {
         // Keep request resilient even if Redis is temporarily unavailable.
       }

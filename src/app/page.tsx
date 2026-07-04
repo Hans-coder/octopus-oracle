@@ -70,6 +70,17 @@ export default async function Dashboard() {
   const aiStatusLabel =
     llmProvider === 'disabled' ? 'AI: OFF' : `AI: ON (${llmProvider.toUpperCase()})`;
 
+  // 動態 slogan：樣本足夠就顯示真實準確率
+  const heroSlogan =
+    accuracy.evaluated >= MIN_EVALUATED
+      ? `章魚哥已預測 ${accuracy.evaluated} 場，命中率 ${Math.round(accuracy.accuracy * 100)}% — 你敢不看嗎？`
+      : '章魚哥正在感應深海能量，神諭即將降臨…';
+
+  const shareTitle =
+    accuracy.evaluated >= MIN_EVALUATED
+      ? `🐙 章魚哥 Oracle｜2026 世界盃預測命中率 ${Math.round(accuracy.accuracy * 100)}%，你敢不看？`
+      : '🐙 章魚哥 Oracle｜2026 世界盃預測，章魚哥幫你預測誰會贏！';
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <section className="overflow-hidden rounded-3xl border-2 border-cyan-500 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 p-6 shadow-lg sm:p-8 cyber-glow">
@@ -79,8 +90,12 @@ export default async function Dashboard() {
             <h1 className="mt-3 text-3xl font-bold text-cyan-300 sm:text-4xl leading-tight">
               章魚哥的神諭系統
             </h1>
-            <p className="mt-3 text-sm text-slate-300 sm:text-base leading-relaxed">
-              用數據和直覺預測比賽結果。我們融合賠率、Elo 等級、近期狀態，搭配選擇性 AI 分析，提供可信的預測。
+            {/* 動態 slogan — 有樣本就顯示命中率，吸引眼球 */}
+            <p className="mt-2 text-sm font-semibold text-amber-300 sm:text-base">
+              {heroSlogan}
+            </p>
+            <p className="mt-2 text-sm text-slate-300 sm:text-base leading-relaxed">
+              融合賠率、Elo 等級、近期狀態，搭配選擇性 AI 分析，提供可追蹤、可比較的世界盃預測。
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
               <span className="rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2 py-1 font-semibold text-cyan-200">
@@ -101,7 +116,7 @@ export default async function Dashboard() {
               </span>
             </div>
             <SupportCard className="mt-4 max-w-xl" />
-            <ShareBar className="mt-3" title="章魚哥 Oracle｜2026 世界盃預測，章魚哥幫你預測誰會贏！" />
+            <ShareBar className="mt-3" title={shareTitle} />
           </div>
           <div className="hidden sm:block text-8xl opacity-20 flex-shrink-0">🐙</div>
         </div>
