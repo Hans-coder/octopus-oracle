@@ -463,6 +463,27 @@ function RevealedState({
         </motion.p>
       )}
 
+      {/* AI 戰術快評（如果有提供） */}
+      {!compact && prediction.tacticalAnalysis && (
+        <motion.div
+          className="mt-3 rounded-xl border border-violet-500/20 bg-violet-900/10 p-3"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="flex items-center gap-1.5 mb-1 text-[10px] font-semibold text-violet-400">
+            <Sparkles className="h-3 w-3" />
+            AI 戰術快評
+          </div>
+          <p className={cn(
+            "text-[11px] leading-relaxed",
+            isCorrect === false ? "text-slate-500" : "text-violet-200/80"
+          )}>
+            {prediction.tacticalAnalysis}
+          </p>
+        </motion.div>
+      )}
+
       {/* 多玩法神諭 */}
       {prediction.extras && (
         <ExtrasStrip 

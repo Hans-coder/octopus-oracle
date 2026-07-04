@@ -172,7 +172,8 @@ function buildPrompt(match: Match, odds: Odds | undefined, stats: MatchStats): s
   lines.push('  "drawProb": 0~1 number,');
   lines.push('  "awayWinProb": 0~1 number,');
   lines.push('  "keyFactors": ["字串", "字串", "字串", "字串"],');
-  lines.push('  "narrative": "50字內，中性、簡潔"');
+  lines.push('  "narrative": "50字內，中性、簡潔",');
+  lines.push('  "tacticalAnalysis": "50字內的戰術快評，指出這場比賽的戰術勝負手"');
   lines.push('}');
   lines.push('三個機率總和需接近 1。');
   return lines.join('\n');
@@ -184,6 +185,7 @@ interface LLMRawResponse {
   awayWinProb: number;
   keyFactors: string[];
   narrative: string;
+  tacticalAnalysis?: string;
 }
 
 function parseLLMResponse(text: string): LLMRawResponse | null {
@@ -516,6 +518,7 @@ export async function getLLMAnalysis(
       ? parsed.keyFactors.filter(Boolean).slice(0, 4)
       : [],
     narrative: (parsed.narrative ?? '').slice(0, 120),
+    tacticalAnalysis: parsed.tacticalAnalysis ? parsed.tacticalAnalysis.slice(0, 150) : undefined,
     provider,
     generatedAt: new Date().toISOString(),
   };

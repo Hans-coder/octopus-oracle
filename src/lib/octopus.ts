@@ -124,13 +124,40 @@ function combine(...inputs: WeightedProbs[]): ProbabilityTriple {
 function applyAdjustments(
   p: ProbabilityTriple,
   isHomeNation: boolean,
-): ProbabilityTriple {
+  stats: MatchStats,
+): { probs: ProbabilityTriple; isUpsetAlert: boolean } {
   const homeBoost = isHomeNation ? HOME_ADVANTAGE : 0;
-  return normalize({
-    home: p.home + homeBoost,
-    draw: p.draw * DRAW_SUPPRESSION,
-    away: Math.max(0, p.away - homeBoost * 0.5),
+  
+  // 1. Upset Alert (冷門預警)
+  // 若 Elo 差距大（>80），但弱隊的近期狀態 (formIndex) 卻明顯優於強隊，或者強隊傷兵滿營
+  let isUpsetAlert = false;
+  let upsetBoostHome = 0;
+  let upsetBoostAway = 0;
+  
+  if (stats.eloDiff > 80 && stats.awayForm.formIndex > stats.homeForm.formIndex + 0.2) {
+    isUpsetAlert = true;
+    upsetBoostAway = 0.08; // 客隊是弱隊但狀態好，加成
+  } else if (stats.eloDiff < -80 && stats.homeForm.formIndex > stats.awayForm.formIndex + 0.2) {
+    isUpsetAlert = true;
+    upsetBoostHome = 0.08; // 主隊是弱隊但狀態好，加成
+  }
+
+  // 2. Draw Boost (沉悶賽事和局加成)
+  // 如果兩隊狀態都很差，或者兩隊火力都很弱，減少 DRAW_SUPPRESSION 的壓抑
+  let currentDrawSuppression = DRAW_SUPPRESSION;
+  if (stats.homeForm.formIndex < 0.3 && stats.awayForm.formIndex < 0.3) {
+    currentDrawSuppression = 1.05; // 狀態都很差，和局機率反而提高
+  } else if (Math.abs(stats.homeForm.formIndex - stats.awayForm.formIndex) < 0.1 && stats.eloDiff < 30) {
+    currentDrawSuppression = 0.95; // 勢均力敵，稍微提高和局
+  }
+
+  const adjusted = normalize({
+    home: p.home + homeBoost + upsetBoostHome,
+    draw: p.draw * currentDrawSuppression,
+    away: Math.max(0, p.away - homeBoost * 0.5) + upsetBoostAway,
   });
+
+  return { probs: adjusted, isUpsetAlert };
 }
 
 function chaosBlend(p: ProbabilityTriple, chaos: number): ProbabilityTriple {
@@ -377,7 +404,7 @@ export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
     );
   }
 
-  const adjusted = applyAdjustments(base, isHomeNation(match));
+  const { probs: adjusted, isUpsetAlert } = applyAdjustments(base, isHomeNation(match), ctx.stats);
   const final = calibrateProbs(
     chaosBlend(adjusted, PAUL_CHAOS),
     weights.calibrationBlend,
@@ -408,6 +435,10 @@ export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
     reasoning = paulReasoning(seed, pickedTeamName, isDraw);
   }
 
+  if (isUpsetAlert && !ctx.llm?.narrative) {
+    reasoning = `🚨 冷門預警：章魚哥察覺到深海暗流，${pickedTeamName} 近期狀態極佳，有機會翻盤！`;
+  }
+
   return {
     matchId: match.id,
     engine: 'paul',
@@ -417,6 +448,8 @@ export function predictOctopus(match: Match, ctx: PredictContext): Prediction {
     reasoning,
     pickedTeamName,
     pickedTeamFlag,
+    isUpsetAlert,
+    tacticalAnalysis: ctx.llm?.tacticalAnalysis,
     source,
     extras: computeMarketExtras(match, ctx, rng),
   };

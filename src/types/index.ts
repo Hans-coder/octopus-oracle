@@ -176,6 +176,8 @@ export interface LLMAnalysis {
   keyFactors: string[];
   /** 章魚神諭官的詩意預告，1-2 句 */
   narrative: string;
+  /** AI 的戰術快評 */
+  tacticalAnalysis?: string;
   provider: 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
   generatedAt: string;
 }
@@ -206,6 +208,10 @@ export interface Prediction {
   reasoning: string;        // 神諭文字
   pickedTeamName: string;   // 顯示用
   pickedTeamFlag: string;
+  /** 是否為爆冷預警 */
+  isUpsetAlert?: boolean;
+  /** AI 戰術分析（如果有） */
+  tacticalAnalysis?: string;
   /** LLM provider 標籤（有設 API key 時會帶） */
   source?: 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
   /** 章魚多玩法（大小 / 客進 / 上半場 / 波膽 / 總進球 / 讓分盤） */
