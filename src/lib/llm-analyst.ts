@@ -138,7 +138,7 @@ function cacheKey(
     oddsSignature(odds),
     statsSignature(stats),
   ].join('::');
-  return `llm:v3:${stringToSeed(raw)}`;
+  return `llm:v4:${stringToSeed(raw)}`;
 }
 
 function isFresh(analysis: LLMAnalysis, ttlSec: number): boolean {
@@ -195,7 +195,7 @@ function parseLLMResponse(text: string): LLMRawResponse | null {
   if (start === -1 || end === -1) return null;
 
   try {
-    const obj = JSON.parse(cleaned.slice(start, end + 1)) as LLMRawResponse;
+    const obj = JSON.parse(cleaned.slice(start, end + 1)) as any;
     if (
       typeof obj.homeWinProb !== 'number' ||
       typeof obj.drawProb !== 'number' ||
@@ -203,7 +203,14 @@ function parseLLMResponse(text: string): LLMRawResponse | null {
     ) {
       return null;
     }
-    return obj;
+    return {
+      homeWinProb: obj.homeWinProb,
+      drawProb: obj.drawProb,
+      awayWinProb: obj.awayWinProb,
+      keyFactors: obj.keyFactors || [],
+      narrative: obj.narrative || '',
+      tacticalAnalysis: obj.tacticalAnalysis || obj.tactical_analysis || obj.tactical || obj.analysis,
+    } as LLMRawResponse;
   } catch {
     return null;
   }
